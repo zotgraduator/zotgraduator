@@ -29,8 +29,8 @@ function AboutUs() {
       id: 3,
       name: 'Jake C',
       image: jake,
-      role: 'UI/UX Designer',
-      description: 'Expert in database design and optimization algorithms.',
+      role: 'Product Owner',
+      description: 'Focused on product vision and ensuring the team meets user needs.',
       github: 'https://github.com/CakeJamble',
       linkedin: 'https://www.linkedin.com/in/jacobcampbelllogan/'
     },
@@ -39,7 +39,7 @@ function AboutUs() {
       name: 'Sierra M',
       image: sierra,
       role: 'Backend Developer',
-      description: 'Creating beautiful, functional designs that enhance user experience.',
+      description: 'Expert in database design and optimization algorithms.',
       github: 'https://github.com/mcdipples',
       linkedin: 'https://www.linkedin.com/in/sierrasusmartin/'
     }
