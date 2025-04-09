@@ -1,0 +1,373 @@
+/* Account Page Styles */
+
+.account-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.page-title {
+  color: var(--primary-color);
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+/* Success and Error Messages */
+.success-message,
+.error-message {
+  padding: 10px 15px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.success-message {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* Authentication Forms */
+.auth-container {
+  max-width: 500px;
+  margin: 0 auto;
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  overflow: hidden;
+}
+
+.auth-form {
+  padding: 2rem;
+}
+
+.auth-form h2 {
+  text-align: center;
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.2rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--gray-medium);
+  border-radius: var(--border-radius);
+  font-family: inherit;
+  font-size: 1rem;
+  transition: border 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(29, 36, 52, 0.1);
+}
+
+.primary-button,
+.secondary-button,
+.danger-button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: var(--border-radius);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.primary-button {
+  background-color: var(--primary-color);
+  color: white;
+  width: 100%;
+}
+
+.primary-button:hover {
+  background-color: #151b2d;
+}
+
+.secondary-button {
+  background-color: #e9ecef;
+  color: var(--text-dark);
+}
+
+.secondary-button:hover {
+  background-color: #dde2e6;
+}
+
+.danger-button {
+  background-color: #dc3545;
+  color: white;
+}
+
+.danger-button:hover {
+  background-color: #c82333;
+}
+
+.text-button {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+
+.text-button:hover {
+  text-decoration: underline;
+}
+
+.form-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: var(--gray-dark);
+}
+
+/* Account Dashboard */
+.account-container {
+  display: flex;
+  gap: 2rem;
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  overflow: hidden;
+}
+
+.account-sidebar {
+  background-color: var(--gray-light);
+  padding: 1.5rem 0;
+  width: 220px;
+  border-right: 1px solid var(--gray-medium);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-button {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.sidebar-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-button.active {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-left-color: var(--primary-color);
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.account-content {
+  flex: 1;
+  padding: 2rem;
+  min-height: 500px;
+}
+
+/* Profile Section */
+.profile-section h2,
+.schedules-section h2,
+.plans-section h2,
+.preferences-section h2 {
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+}
+
+.profile-info {
+  margin-bottom: 2rem;
+}
+
+.info-group {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.info-group label {
+  font-weight: 600;
+  width: 100px;
+  color: var(--gray-dark);
+}
+
+.info-group p {
+  margin: 0;
+  flex: 1;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Saved Items (Schedules & Plans) */
+.saved-items-list {
+  margin-bottom: 1.5rem;
+}
+
+.saved-item {
+  background-color: var(--gray-light);
+  border-radius: var(--border-radius);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.saved-item-header {
+  background-color: #e9ecef;
+  padding: 0.8rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.saved-item-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.saved-item-details {
+  padding: 1rem;
+}
+
+.saved-item-details p {
+  margin: 0;
+}
+
+.saved-item-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0.2rem;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.icon-button:hover {
+  opacity: 1;
+}
+
+.empty-state {
+  font-style: italic;
+  color: var(--gray-dark);
+  text-align: center;
+  padding: 1.5rem;
+}
+
+/* Preferences Section */
+.preferences-section form {
+  max-width: 500px;
+}
+
+.preference-group {
+  margin-bottom: 1rem;
+}
+
+.preference-group label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.preference-group input[type="checkbox"] {
+  margin-right: 10px;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+/* Demo Credentials */
+.demo-credentials {
+  margin-top: 2rem;
+  padding: 1rem;
+  background-color: #e9ecef;
+  border-radius: var(--border-radius);
+  font-size: 0.9rem;
+}
+
+.demo-credentials p {
+  margin: 0.3rem 0;
+}
+
+.demo-credentials p:first-child {
+  font-weight: 600;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .account-container {
+    flex-direction: column;
+  }
+
+  .account-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--gray-medium);
+    padding: 0;
+  }
+
+  .sidebar-button {
+    text-align: center;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+  }
+
+  .sidebar-button.active {
+    border-left-color: transparent;
+    border-bottom-color: var(--primary-color);
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .profile-actions {
+    flex-direction: column;
+  }
+}
