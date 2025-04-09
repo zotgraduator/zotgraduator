@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  frontend:
+    build: ./frontend
+    container_name: zotgrad_frontend_c
+    ports:
+      - "3000:3000"
+    stdin_open: true
+    tty: true
