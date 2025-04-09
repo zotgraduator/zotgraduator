@@ -1,23 +1,83 @@
-import logo from './logo.svg';
+import React from 'react';
+import { Routes, Route, Link } from 'react-router-dom';
 import './App.css';
+import Optimizer from './pages/Optimizer';
+import Social from './pages/Social';
+import Account from './pages/Account';
+import TermsAndConditions from './pages/TermsAndConditions';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import AboutUs from './pages/AboutUs';
+import logo from './logo.png';
 
 function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload. TEST!
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <Link to="/">
+          <img src={logo} alt="Zotgraduator Logo" className="App-logo" />
+        </Link>
+        <nav>
+          <Link to="/optimizer">Optimizer</Link>
+          <Link to="/social">Social</Link>
+          <Link to="/account">Account</Link>
+        </nav>
       </header>
+      <main>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/optimizer" element={<Optimizer />} />
+          <Route path="/social" element={<Social />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/terms" element={<TermsAndConditions />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/about" element={<AboutUs />} />
+        </Routes>
+      </main>
+      <footer>
+        <Link to="/terms">Terms and Conditions</Link>
+        <Link to="/privacy">Privacy Policy</Link>
+        <Link to="/about">About Us</Link>
+      </footer>
+    </div>
+  );
+}
+
+function Dashboard() {
+  return (
+    <div className="Dashboard">
+      <section className="hero-section">
+        <h1>ZOTGRADUATOR</h1>
+        <p className="Tagline">Your path to graduation, simplified.</p>
+        <button className="cta-button">Get Started</button>
+      </section>
+
+      <section className="mission-section">
+        <h2>Our Mission</h2>
+        <p>We help UCI students plan their academic journey efficiently, ensuring they meet all graduation requirements while balancing their interests and career goals.</p>
+      </section>
+
+      <section className="features-section">
+        <h2>Features</h2>
+        <div className="features-container">
+          <div className="feature-card">
+            <div className="feature-icon">📚</div>
+            <h3>Course Planning</h3>
+            <p>Plan your courses each quarter to stay on track for graduation.</p>
+          </div>
+          
+          <div className="feature-card">
+            <div className="feature-icon">🗓️</div>
+            <h3>Schedule Optimization</h3>
+            <p>Create conflict-free schedules that work with your preferences.</p>
+          </div>
+          
+          <div className="feature-card">
+            <div className="feature-icon">👥</div>
+            <h3>Community Advice</h3>
+            <p>Connect with peers and get advice on courses and professors.</p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

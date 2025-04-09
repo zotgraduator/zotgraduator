@@ -1,38 +1,237 @@
+@font-face {
+  font-family: 'Lexend Deca';
+  src: url('./font/LexendDeca-VariableFont_wght.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+:root {
+  --primary-color: #1d2434; /* UCI blue */
+  --secondary-color: #ffbf00; /* UCI gold */
+  --header-color: #1d2434; /* Dark header background */
+  --text-dark: #1e2535;
+  --text-light: #ffffff;
+  --gray-light: #f6f8fa;
+  --gray-medium: #e0e0e0;
+  --gray-dark: #767676;
+  --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --border-radius: 8px;
+  --transition: all 0.3s ease;
+}
+
+body {
+  margin: 0;
+  font-family: 'Lexend Deca', 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--gray-light);
+  color: var(--text-dark);
+  line-height: 1.6;
+}
+
 .App {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 .App-logo {
-  height: 40vmin;
-  pointer-events: none;
+  height: 40px;
+  transition: var(--transition);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.App-logo:hover {
+  transform: scale(1.05);
 }
 
 .App-header {
-  background-color: #282c34;
-  min-height: 100vh;
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: space-between;
+  background-color: var(--header-color);
+  color: var(--text-light);
+  padding: 15px 5%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+nav {
+  display: flex;
+  gap: 20px;
+}
+
+nav a {
+  color: var(--text-light);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+}
+
+nav a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  text-decoration: none;
+}
+
+main {
+  flex: 1;
+  padding: 0;
+  margin-bottom: 60px; /* Space for footer */
+}
+
+/* Dashboard Styling */
+.Dashboard {
+  text-align: center;
+}
+
+.hero-section {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #003a5d 100%);
+  color: var(--text-light);
+  padding: 80px 20px;
+}
+
+.hero-section h1 {
+  font-size: 3rem;
+  margin: 0;
+  letter-spacing: 1px;
+}
+
+.Tagline {
+  font-size: 1.4rem;
+  margin: 20px 0 30px;
+  font-weight: 300;
+}
+
+.cta-button {
+  background-color: var(--secondary-color);
+  color: var(--text-dark);
+  border: none;
+  padding: 12px 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.cta-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--box-shadow);
+}
+
+.mission-section {
+  padding: 60px 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.mission-section h2 {
+  color: var(--primary-color);
+  margin-bottom: 20px;
+}
+
+.mission-section p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+}
+
+.features-section {
+  background-color: var(--gray-light);
+  padding: 60px 20px;
+}
+
+.features-section h2 {
+  color: var(--primary-color);
+  margin-bottom: 40px;
+}
+
+.features-container {
+  display: flex;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  gap: 30px;
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-.App-link {
-  color: #61dafb;
+.feature-card {
+  background-color: white;
+  padding: 30px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  width: 290px;
+  transition: var(--transition);
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+}
+
+.feature-icon {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+}
+
+.feature-card h3 {
+  margin: 15px 0;
+  color: var(--primary-color);
+}
+
+.feature-card p {
+  color: var(--gray-dark);
+}
+
+footer {
+  background-color: var(--text-dark);
+  color: var(--text-light);
+  text-align: center;
+  padding: 15px 0;
+  width: 100%;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+}
+
+footer a {
+  color: var(--text-light);
+  margin: 0 15px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+footer a:hover {
+  color: var(--secondary-color);
+}
+
+/* Remove the pipe after last link */
+footer a:last-child::after {
+  content: "";
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .App-header {
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
   }
-  to {
-    transform: rotate(360deg);
+  
+  .hero-section {
+    padding: 40px 20px;
+  }
+  
+  .hero-section h1 {
+    font-size: 2.2rem;
+  }
+  
+  .Tagline {
+    font-size: 1.2rem;
   }
 }
