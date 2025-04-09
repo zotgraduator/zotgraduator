@@ -3,6 +3,7 @@ import { Routes, Route, Link } from 'react-router-dom';
 import './App.css';
 import './styles/Account.css';
 import './styles/AboutUs.css';
+import './styles/Legal.css';
 import Optimizer from './pages/Optimizer';
 import Social from './pages/Social';
 import Account from './pages/Account';
