@@ -1,20 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../styles/Optimizer.css';
 import logo from '../logo.png';
 
 function Optimizer() {
+  const currentYear = new Date().getFullYear();
+  
   // State for sidebar configurations
-  const [major, setMajor] = useState(['Software']);
-  const [startYear, setStartYear] = useState('2024');
-  const [plannedYears, setPlannedYears] = useState(1);
-  const [maxUnitsPerSemester, setMaxUnitsPerSemester] = useState(4);
+  const [majorOptions] = useState(['Software Engineering', 'Computer Science', 'Informatics', 'Data Science']);
+  const [major, setMajor] = useState(['Software Engineering']);
+  const [searchMajor, setSearchMajor] = useState('');
+  const [showMajorOptions, setShowMajorOptions] = useState(false);
+  
+  const [startYear, setStartYear] = useState(currentYear);
+  const [endYear, setEndYear] = useState(currentYear + 4);
+  const [plannedYears, setPlannedYears] = useState(4);
+  
+  const [maxUnitsPerSemester, setMaxUnitsPerSemester] = useState(16);
+  
   const [electiveCourses, setElectiveCourses] = useState(['CS 165', 'CS 145', 'CS 14']);
+  const [searchElectives, setSearchElectives] = useState('');
+  const [showElectiveOptions, setShowElectiveOptions] = useState(false);
+  
   const [completedCourses, setCompletedCourses] = useState(['ICS 6N', 'ICS 32', 'ICS 4']);
+  const [searchCompleted, setSearchCompleted] = useState('');
+  const [showCompletedOptions, setShowCompletedOptions] = useState(false);
   
   // State for collapsible sections
   const [collapsedSections, setCollapsedSections] = useState({
     major: false,
-    startYear: false,
+    academicYears: false,
     plannedYears: false,
     maxUnits: false,
     electives: false,
@@ -22,46 +36,11 @@ function Optimizer() {
   });
 
   // State for expandable rows in the table
-  const [expandedRows, setExpandedRows] = useState({
-    'Fall 2024': true,
-    'Winter 2025': true,
-    'Spring 2025': true,
-    'Fall 2025': false,
-    'Winter 2026': false
-  });
-
-  // Toggle section collapse state
-  const toggleSection = (section) => {
-    setCollapsedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
-
-  // Toggle row expansion
-  const toggleRow = (row) => {
-    setExpandedRows(prev => ({
-      ...prev,
-      [row]: !prev[row]
-    }));
-  };
-
-  // Handle removing a selected item (tag)
-  const removeItem = (array, setArray, item) => {
-    setArray(array.filter(i => i !== item));
-  };
-
-  // Handle adding a new item to a selection
-  const addItem = (array, setArray, item) => {
-    if (!array.includes(item)) {
-      setArray([...array, item]);
-    }
-  };
+  const [expandedRows, setExpandedRows] = useState({});
 
   // Mock data for suggested options
-  const majorOptions = ['Software Engineering'];
-  const electiveOptions = ['CS 141', 'CS 142A', 'CS 142B'];
-  const completedOptions = ['ICS 45C', 'ICS 45J', 'ICS 46'];
+  const electiveOptions = ['CS 141', 'CS 142A', 'CS 142B', 'CS 143A', 'CS 161', 'CS 164', 'CS 165', 'CS 169', 'CS 171', 'CS 172B', 'CS 175', 'CS 178'];
+  const completedOptions = ['ICS 45C', 'ICS 45J', 'ICS 46', 'ICS 6B', 'ICS 6D', 'ICS 6N', 'ICS 33', 'ICS 32', 'ICS 31', 'STATS 67'];
 
   // Mock plans data for the table
   const plans = [
@@ -86,6 +65,66 @@ function Optimizer() {
       classes: ['CS 161', 'INF 122', 'INF 124', 'INF 191A']
     }
   ];
+
+  // Effect to update planned years when start/end years change
+  useEffect(() => {
+    const years = endYear - startYear;
+    setPlannedYears(years);
+  }, [startYear, endYear]);
+
+  // Toggle section collapse state
+  const toggleSection = (section) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  // Toggle row expansion
+  const toggleRow = (row) => {
+    setExpandedRows(prev => ({
+      ...prev,
+      [row]: !prev[row]
+    }));
+  };
+
+  // Filter options based on search input
+  const getFilteredOptions = (options, searchTerm) => {
+    if (!searchTerm) return options;
+    return options.filter(option => 
+      option.toLowerCase().includes(searchTerm.toLowerCase()));
+  };
+
+  // Handle removing a selected item (tag)
+  const removeItem = (array, setArray, item) => {
+    setArray(array.filter(i => i !== item));
+  };
+
+  // Handle adding a new item to a selection
+  const addItem = (array, setArray, item) => {
+    if (!array.includes(item)) {
+      setArray([...array, item]);
+    }
+  };
+
+  // Handle year changes
+  const handleStartYearChange = (e) => {
+    const value = parseInt(e.target.value);
+    setStartYear(value);
+    // Ensure end year is not less than start year
+    if (value >= endYear) {
+      setEndYear(value + 1);
+    }
+  };
+
+  const handleEndYearChange = (e) => {
+    const value = parseInt(e.target.value);
+    setEndYear(value);
+    // Ensure start year is not greater than end year
+    if (value <= startYear) {
+      setStartYear(value - 1);
+    }
+  };
 
   return (
     <div className="optimizer-page">
@@ -142,19 +181,34 @@ function Optimizer() {
                           </button>
                         </span>
                       ))}
-                      <input type="text" placeholder="" />
+                      <input 
+                        type="text" 
+                        placeholder="Search majors..." 
+                        value={searchMajor}
+                        onChange={(e) => {
+                          setSearchMajor(e.target.value);
+                          setShowMajorOptions(true);
+                        }}
+                        onFocus={() => setShowMajorOptions(true)}
+                      />
                     </div>
-                    {major.length === 0 && majorOptions.length > 0 && (
+                    {showMajorOptions && (
                       <div className="options-dropdown">
-                        {majorOptions.map((option) => (
-                          <div 
-                            key={option} 
-                            className="option-item"
-                            onClick={() => addItem(major, setMajor, option)}
-                          >
-                            {option}
-                          </div>
-                        ))}
+                        {getFilteredOptions(majorOptions, searchMajor)
+                          .filter(option => !major.includes(option))
+                          .map((option) => (
+                            <div 
+                              key={option} 
+                              className="option-item"
+                              onClick={() => {
+                                addItem(major, setMajor, option);
+                                setSearchMajor('');
+                                setShowMajorOptions(false);
+                              }}
+                            >
+                              {option}
+                            </div>
+                          ))}
                       </div>
                     )}
                   </div>
@@ -163,28 +217,47 @@ function Optimizer() {
             )}
           </div>
 
-          {/* Start Year Section */}
+          {/* Academic Years Section */}
           <div className="sidebar-section">
             <div 
               className="section-header" 
-              onClick={() => toggleSection('startYear')}
+              onClick={() => toggleSection('academicYears')}
             >
-              <h3>Start Year</h3>
-              <span className={`chevron ${collapsedSections.startYear ? 'down' : 'up'}`}>
-                {collapsedSections.startYear ? '▼' : '▲'}
+              <h3>Academic Years</h3>
+              <span className={`chevron ${collapsedSections.academicYears ? 'down' : 'up'}`}>
+                {collapsedSections.academicYears ? '▼' : '▲'}
               </span>
             </div>
-            {!collapsedSections.startYear && (
+            {!collapsedSections.academicYears && (
               <div className="section-content">
-                <p className="section-instruction">Enter your start year</p>
-                <div className="input-container">
-                  <label className="input-label">Value</label>
-                  <input 
-                    type="text" 
-                    className="text-input"
-                    value={startYear}
-                    onChange={(e) => setStartYear(e.target.value)}
-                  />
+                <p className="section-instruction">Select your academic years</p>
+                <div className="years-container">
+                  <div className="year-input-group">
+                    <div className="input-container">
+                      <label className="input-label">Start Year</label>
+                      <select 
+                        className="year-select"
+                        value={startYear}
+                        onChange={handleStartYearChange}
+                      >
+                        {Array.from({ length: 10 }, (_, i) => currentYear - 5 + i).map((year) => (
+                          <option key={`start-${year}`} value={year}>{year}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="input-container">
+                      <label className="input-label">End Year</label>
+                      <select 
+                        className="year-select"
+                        value={endYear}
+                        onChange={handleEndYearChange}
+                      >
+                        {Array.from({ length: 10 }, (_, i) => currentYear - 3 + i).map((year) => (
+                          <option key={`end-${year}`} value={year}>{year}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -210,17 +283,22 @@ function Optimizer() {
                   </div>
                   <input
                     type="range"
-                    min="0"
+                    min="1"
                     max="4"
                     value={plannedYears}
-                    onChange={(e) => setPlannedYears(parseInt(e.target.value))}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      setPlannedYears(value);
+                      setEndYear(startYear + value);
+                    }}
                     className="range-slider"
                   />
                   <div className="range-labels">
-                    <span>0</span>
+                    <span>1</span>
                     <span>4</span>
                   </div>
                 </div>
+                <p className="calculated-years">Based on Start/End Years: {startYear} - {endYear}</p>
               </div>
             )}
           </div>
@@ -245,14 +323,14 @@ function Optimizer() {
                   </div>
                   <input
                     type="range"
-                    min="0"
+                    min="4"
                     max="24"
                     value={maxUnitsPerSemester}
                     onChange={(e) => setMaxUnitsPerSemester(parseInt(e.target.value))}
                     className="range-slider"
                   />
                   <div className="range-labels">
-                    <span>0</span>
+                    <span>4</span>
                     <span>24</span>
                   </div>
                 </div>
@@ -289,19 +367,35 @@ function Optimizer() {
                           </button>
                         </span>
                       ))}
-                      <input type="text" placeholder="" />
+                      <input 
+                        type="text" 
+                        placeholder="Search courses..." 
+                        value={searchElectives}
+                        onChange={(e) => {
+                          setSearchElectives(e.target.value);
+                          setShowElectiveOptions(true);
+                        }}
+                        onFocus={() => setShowElectiveOptions(true)}
+                      />
                     </div>
-                    <div className="options-dropdown">
-                      {electiveOptions.map((option) => (
-                        <div 
-                          key={option} 
-                          className="option-item"
-                          onClick={() => addItem(electiveCourses, setElectiveCourses, option)}
-                        >
-                          {option}
-                        </div>
-                      ))}
-                    </div>
+                    {showElectiveOptions && (
+                      <div className="options-dropdown">
+                        {getFilteredOptions(electiveOptions, searchElectives)
+                          .filter(option => !electiveCourses.includes(option))
+                          .map((option) => (
+                            <div 
+                              key={option} 
+                              className="option-item"
+                              onClick={() => {
+                                addItem(electiveCourses, setElectiveCourses, option);
+                                setSearchElectives('');
+                              }}
+                            >
+                              {option}
+                            </div>
+                          ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -337,19 +431,35 @@ function Optimizer() {
                           </button>
                         </span>
                       ))}
-                      <input type="text" placeholder="" />
+                      <input 
+                        type="text" 
+                        placeholder="Search courses..." 
+                        value={searchCompleted}
+                        onChange={(e) => {
+                          setSearchCompleted(e.target.value);
+                          setShowCompletedOptions(true);
+                        }}
+                        onFocus={() => setShowCompletedOptions(true)}
+                      />
                     </div>
-                    <div className="options-dropdown">
-                      {completedOptions.map((option) => (
-                        <div 
-                          key={option} 
-                          className="option-item"
-                          onClick={() => addItem(completedCourses, setCompletedCourses, option)}
-                        >
-                          {option}
-                        </div>
-                      ))}
-                    </div>
+                    {showCompletedOptions && (
+                      <div className="options-dropdown">
+                        {getFilteredOptions(completedOptions, searchCompleted)
+                          .filter(option => !completedCourses.includes(option))
+                          .map((option) => (
+                            <div 
+                              key={option} 
+                              className="option-item"
+                              onClick={() => {
+                                addItem(completedCourses, setCompletedCourses, option);
+                                setSearchCompleted('');
+                              }}
+                            >
+                              {option}
+                            </div>
+                          ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -399,41 +509,58 @@ function Optimizer() {
 
             <div className="table-body">
               {plans.map((plan) => (
-                <div key={plan.term} className="table-row">
-                  <div 
-                    className="cell head-cell clickable" 
-                    onClick={() => toggleRow(plan.term)}
-                  >
-                    <span className={`row-chevron ${expandedRows[plan.term] ? 'up' : 'down'}`}>
-                      {expandedRows[plan.term] ? '▲' : '▼'}
-                    </span>
-                    {plan.term}
-                  </div>
-                  {expandedRows[plan.term] && plan.classes.map((cls, index) => (
-                    <div key={index} className="cell">{cls}</div>
-                  ))}
-                </div>
-              ))}
-
-              <div className="ai-summary-row">
-                <div className="ai-summary-header">
-                  <span className="eye-icon"><i className="fas fa-eye"></i></span>
-                  AI Generated Summary
-                </div>
-                <div className="ai-summary-content">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eget felis vitae justo eleifend vulputate. 
-                  Nulla facilisi. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; 
-                  Cras vitae magna vel nisi gravida fringilla.
-                  
-                  <div className="warning-alert">
-                    <div className="alert-icon"><i className="fas fa-exclamation-triangle"></i></div>
-                    <div className="alert-content">
-                      <strong>Rate My Professor</strong>
-                      <p>Courses average to a professor rating below 2.5/5</p>
+                <React.Fragment key={plan.term}>
+                  <div className="table-row term-row">
+                    <div 
+                      className="cell head-cell clickable" 
+                      onClick={() => toggleRow(plan.term)}
+                    >
+                      <span className={`row-chevron ${expandedRows[plan.term] ? 'up' : 'down'}`}>
+                        {expandedRows[plan.term] ? '▲' : '▼'}
+                      </span>
+                      {plan.term}
                     </div>
+                    {!expandedRows[plan.term] && plan.classes.map((cls, index) => (
+                      <div key={index} className="cell">{cls}</div>
+                    ))}
                   </div>
-                </div>
-              </div>
+                  
+                  {expandedRows[plan.term] && (
+                    <div className="expanded-content">
+                      <div className="class-details-row">
+                        {plan.classes.map((cls, index) => (
+                          <div key={index} className="class-detail">
+                            <h4>{cls}</h4>
+                            <p>Units: 4</p>
+                            <p>Professor: Example</p>
+                            <p>Time: MWF 10:00-10:50AM</p>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="ai-summary-row">
+                        <div className="ai-summary-header">
+                          <span className="eye-icon"><i className="fas fa-eye"></i></span>
+                          AI Generated Summary
+                        </div>
+                        <div className="ai-summary-content">
+                          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eget felis vitae justo eleifend vulputate. 
+                          Nulla facilisi. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; 
+                          Cras vitae magna vel nisi gravida fringilla.
+                          
+                          <div className="warning-alert">
+                            <div className="alert-icon"><i className="fas fa-exclamation-triangle"></i></div>
+                            <div className="alert-content">
+                              <strong>Rate My Professor</strong>
+                              <p>Courses average to a professor rating below 2.5/5</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </React.Fragment>
+              ))}
             </div>
 
             <div className="table-footer">
