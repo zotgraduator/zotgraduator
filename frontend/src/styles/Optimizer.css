@@ -1,10 +1,14 @@
 /* Optimizer Page Styles */
 
+/* Fix sidebar height and scrolling issues */
+
+/* App container - ensure full height */
 .optimizer-page {
   background-color: var(--gray-light);
-  min-height: calc(100vh - 105px); /* Adjust for header/footer */
   display: flex;
   flex-direction: column;
+  height: calc(100vh - 105px); /* Full height minus header */
+  margin-bottom: 0; /* Remove margin */
 }
 
 /* Header Styles */
@@ -66,23 +70,96 @@
   color: var(--gray-dark);
 }
 
-/* Main Content Layout */
+/* Main Content Layout - fix height and remove scrolling */
 .optimizer-content {
   display: flex;
   flex: 1;
-  height: calc(100vh - 166px); /* Adjust based on header/footer heights */
-  overflow: hidden;
+  height: calc(100vh - 166px - 60px); /* Adjust for header and footer heights */
+  min-height: 0; /* Allow container to shrink */
+  overflow: hidden; /* Hide overflow */
+  position: relative;
+  z-index: 1;
 }
 
-/* Sidebar Styles */
+/* Sidebar Styles - ensure proper positioning */
 .sidebar {
   width: 30%;
   background-color: white;
-  border-right: 1px solid var(--gray-medium);
-  overflow-y: auto;
+  overflow-y: auto; /* Only sidebar should scroll */
   padding: 20px;
+  transition: width 0.3s ease, transform 0.3s ease, padding 0.3s ease;
+  z-index: 5; /* Lower than footer */
+  border-right: 1px solid var(--gray-medium);
+  box-sizing: border-box; /* Include padding in width calculation */
+  position: relative; /* Ensure position context for the toggle button */
+  height: 100%; /* Fill parent height */
+  max-height: none; /* Remove max-height restriction */
+  flex-shrink: 0; /* Prevent sidebar from shrinking */
 }
 
+.sidebar.collapsed {
+  width: 0;
+  padding: 0;
+  overflow: hidden;
+  transform: translateX(-100%);
+}
+
+/* Resizer styles */
+.sidebar-resizer {
+  width: 8px;
+  background-color: transparent;
+  cursor: col-resize;
+  position: relative;
+  z-index: 20;
+}
+
+.resizer-line {
+  width: 2px;
+  height: 100%;
+  background-color: var(--gray-medium);
+  margin: 0 auto;
+}
+
+.sidebar-resizer:hover .resizer-line {
+  background-color: var(--primary-color);
+}
+
+/* Sidebar toggle button - make thinner with smoother transition */
+.sidebar-toggle {
+  position: absolute; /* Keep as absolute within the relative container */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px; /* Reduced from 24px to 16px for a thinner look */
+  height: 48px;
+  background-color: var(--primary-color);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 0 4px 4px 0;
+  opacity: 0;
+  transition: opacity 0.3s ease, left 0.3s ease, transform 0.3s ease; /* Add transform to transition */
+  z-index: 15;
+  font-weight: bold;
+  font-size: 0.8rem; /* Smaller font size for the arrow symbol */
+  left: calc(30% - 1px); /* Position at sidebar edge */
+}
+
+/* When sidebar is collapsed, position toggle at left edge */
+.sidebar.collapsed + .sidebar-toggle {
+  left: 0;
+}
+
+.sidebar-toggle.show {
+  opacity: 1;
+}
+
+.optimizer-content:hover .sidebar-toggle {
+  opacity: 1;
+}
+
+/* Sidebar Section */
 .sidebar-section {
   margin-bottom: 16px;
   border-bottom: 1px solid var(--gray-medium);
@@ -147,6 +224,7 @@
 
 /* Multi-select Style */
 .multi-select {
+  position: relative;
   border: 1px solid var(--gray-medium);
   border-radius: var(--border-radius);
   padding: 5px 10px;
@@ -186,22 +264,22 @@
   flex-grow: 1;
   min-width: 60px;
   font-size: 0.95rem;
-}
-
-.multi-select input:focus {
   outline: none;
+  background: transparent;
 }
 
 .options-dropdown {
+  position: absolute;
   margin-top: 5px;
   max-height: 150px;
   overflow-y: auto;
   border: 1px solid var(--gray-medium);
   border-radius: var(--border-radius);
   background-color: white;
-  position: absolute;
   width: calc(100% - 2px);
-  z-index: 10;
+  left: 0;
+  right: 0;
+  z-index: 100;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
@@ -271,13 +349,27 @@
   font-size: 0.85rem;
 }
 
-/* Main Content Area */
+/* Main Content Area - make it non-scrollable */
 .main-content {
   flex: 1;
   padding: 20px;
-  overflow-y: auto;
+  overflow-y: auto; /* Only allow scrolling in main content if necessary */
+  transition: margin-left 0.3s ease;
+  position: relative;
+  z-index: 5;
+  height: 100%;
 }
 
+/* Update to the Planned Years slider for clarity */
+.calculated-years {
+  font-size: 0.85rem;
+  color: var(--gray-dark);
+  margin-top: 10px;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Main Header */
 .main-header {
   margin-bottom: 20px;
 }
@@ -558,6 +650,7 @@
   color: var(--gray-dark);
   margin-top: 10px;
   text-align: center;
+  font-weight: 500;
 }
 
 /* Table and Expanded Content */
@@ -596,17 +689,28 @@
   font-size: 0.9rem;
 }
 
-/* Responsive Styles */
+/* Responsive Styles - adjust for mobile */
 @media (max-width: 992px) {
   .optimizer-content {
+    height: auto;
     flex-direction: column;
   }
 
   .sidebar {
-    width: 100%;
+    width: 100% !important;
     border-right: none;
     border-bottom: 1px solid var(--gray-medium);
-    max-height: 300px;
+    max-height: 300px; /* Only limit height on mobile */
+  }
+
+  .sidebar-toggle {
+    width: 16px; /* Keep thin even on mobile */
+    position: absolute;
+    top: 300px;
+    left: 50% !important;
+    transform: translateX(-50%) translateY(0) rotate(90deg);
+    border-radius: 0 0 4px 4px;
+    height: 24px;
   }
 
   .action-filter-bar {
@@ -641,4 +745,14 @@
     flex-direction: column;
     gap: 10px;
   }
+}
+
+/* Footer style to ensure it stays on top */
+footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  height: 60px; /* Define height explicitly */
+  box-sizing: border-box;
+  z-index: 20; /* Ensure footer stays above all content */
 }

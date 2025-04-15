@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import '../styles/Optimizer.css';
-import logo from '../logo.png';
 
 function Optimizer() {
   const currentYear = new Date().getFullYear();
+  const dropdownRef = useRef(null);
+  const sidebarRef = useRef(null);
   
   // State for sidebar configurations
   const [majorOptions] = useState(['Software Engineering', 'Computer Science', 'Informatics', 'Data Science']);
@@ -12,9 +13,7 @@ function Optimizer() {
   const [showMajorOptions, setShowMajorOptions] = useState(false);
   
   const [startYear, setStartYear] = useState(currentYear);
-  const [endYear, setEndYear] = useState(currentYear + 4);
   const [plannedYears, setPlannedYears] = useState(4);
-  
   const [maxUnitsPerSemester, setMaxUnitsPerSemester] = useState(16);
   
   const [electiveCourses, setElectiveCourses] = useState(['CS 165', 'CS 145', 'CS 14']);
@@ -24,6 +23,9 @@ function Optimizer() {
   const [completedCourses, setCompletedCourses] = useState(['ICS 6N', 'ICS 32', 'ICS 4']);
   const [searchCompleted, setSearchCompleted] = useState('');
   const [showCompletedOptions, setShowCompletedOptions] = useState(false);
+  
+  // State for sidebar visibility
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   // State for collapsible sections
   const [collapsedSections, setCollapsedSections] = useState({
@@ -66,11 +68,47 @@ function Optimizer() {
     }
   ];
 
-  // Effect to update planned years when start/end years change
+  // Add click outside listener to close dropdowns
   useEffect(() => {
-    const years = endYear - startYear;
-    setPlannedYears(years);
-  }, [startYear, endYear]);
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowMajorOptions(false);
+        setShowElectiveOptions(false);
+        setShowCompletedOptions(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Add effect for smooth transition of toggle button
+  useEffect(() => {
+    const updateToggleButton = () => {
+      const sidebar = sidebarRef.current;
+      const toggle = document.querySelector('.sidebar-toggle');
+      
+      if (sidebar && toggle) {
+        if (!sidebarCollapsed) {
+          // Position at the edge of the sidebar for expanded state
+          const sidebarWidth = sidebar.getBoundingClientRect().width;
+          toggle.style.left = `${sidebarWidth - 1}px`; // -1px to account for border
+        } else {
+          // Position at left edge for collapsed state
+          toggle.style.left = '0px';
+        }
+      }
+    };
+    
+    // Run once on mount and when sidebar collapses/expands
+    updateToggleButton();
+    
+    // Also update on window resize for responsiveness
+    window.addEventListener('resize', updateToggleButton);
+    return () => window.removeEventListener('resize', updateToggleButton);
+  }, [sidebarCollapsed]);
 
   // Toggle section collapse state
   const toggleSection = (section) => {
@@ -86,6 +124,11 @@ function Optimizer() {
       ...prev,
       [row]: !prev[row]
     }));
+  };
+
+  // Toggle sidebar collapse
+  const toggleSidebar = () => {
+    setSidebarCollapsed(prev => !prev);
   };
 
   // Filter options based on search input
@@ -107,31 +150,20 @@ function Optimizer() {
     }
   };
 
-  // Handle year changes
+  // Handle start year change
   const handleStartYearChange = (e) => {
     const value = parseInt(e.target.value);
     setStartYear(value);
-    // Ensure end year is not less than start year
-    if (value >= endYear) {
-      setEndYear(value + 1);
-    }
   };
 
-  const handleEndYearChange = (e) => {
-    const value = parseInt(e.target.value);
-    setEndYear(value);
-    // Ensure start year is not greater than end year
-    if (value <= startYear) {
-      setStartYear(value - 1);
-    }
-  };
+  // Calculate end year based on start year and planned years
+  const endYear = startYear + plannedYears;
 
   return (
     <div className="optimizer-page">
       {/* Top Navigation/Header */}
       <header className="optimizer-header">
         <div className="header-left">
-          <img src={logo} alt="Zotgraduator Logo" className="optimizer-logo" />
           <div className="header-actions">
             <button className="icon-button create-button">
               <i className="fas fa-plus"></i> CREATE
@@ -151,7 +183,10 @@ function Optimizer() {
       {/* Main Content with Sidebar and Results */}
       <div className="optimizer-content">
         {/* Left Sidebar for Configuration */}
-        <div className="sidebar">
+        <div 
+          ref={sidebarRef}
+          className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}
+        >
           {/* Major Section */}
           <div className="sidebar-section">
             <div 
@@ -175,7 +210,10 @@ function Optimizer() {
                           {item}
                           <button 
                             className="remove-tag" 
-                            onClick={() => removeItem(major, setMajor, item)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeItem(major, setMajor, item);
+                            }}
                           >
                             ×
                           </button>
@@ -185,6 +223,10 @@ function Optimizer() {
                         type="text" 
                         placeholder="Search majors..." 
                         value={searchMajor}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowMajorOptions(true);
+                        }}
                         onChange={(e) => {
                           setSearchMajor(e.target.value);
                           setShowMajorOptions(true);
@@ -200,7 +242,8 @@ function Optimizer() {
                             <div 
                               key={option} 
                               className="option-item"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 addItem(major, setMajor, option);
                                 setSearchMajor('');
                                 setShowMajorOptions(false);
@@ -230,33 +273,19 @@ function Optimizer() {
             </div>
             {!collapsedSections.academicYears && (
               <div className="section-content">
-                <p className="section-instruction">Select your academic years</p>
+                <p className="section-instruction">Select your start year</p>
                 <div className="years-container">
-                  <div className="year-input-group">
-                    <div className="input-container">
-                      <label className="input-label">Start Year</label>
-                      <select 
-                        className="year-select"
-                        value={startYear}
-                        onChange={handleStartYearChange}
-                      >
-                        {Array.from({ length: 10 }, (_, i) => currentYear - 5 + i).map((year) => (
-                          <option key={`start-${year}`} value={year}>{year}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="input-container">
-                      <label className="input-label">End Year</label>
-                      <select 
-                        className="year-select"
-                        value={endYear}
-                        onChange={handleEndYearChange}
-                      >
-                        {Array.from({ length: 10 }, (_, i) => currentYear - 3 + i).map((year) => (
-                          <option key={`end-${year}`} value={year}>{year}</option>
-                        ))}
-                      </select>
-                    </div>
+                  <div className="input-container">
+                    <label className="input-label">Start Year</label>
+                    <select 
+                      className="year-select"
+                      value={startYear}
+                      onChange={handleStartYearChange}
+                    >
+                      {Array.from({ length: 10 }, (_, i) => currentYear - 5 + i).map((year) => (
+                        <option key={`start-${year}`} value={year}>{year}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>
@@ -278,27 +307,26 @@ function Optimizer() {
               <div className="section-content">
                 <p className="section-instruction">How many years do you want to plan?</p>
                 <div className="slider-container">
-                  <div className="slider-value" style={{ left: `${(plannedYears / 4) * 100}%` }}>
+                  <div 
+                    className="slider-value" 
+                    style={{ left: `${(plannedYears / 8) * 100}%` }}
+                  >
                     {plannedYears}
                   </div>
                   <input
                     type="range"
                     min="1"
-                    max="4"
+                    max="8"
                     value={plannedYears}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value);
-                      setPlannedYears(value);
-                      setEndYear(startYear + value);
-                    }}
+                    onChange={(e) => setPlannedYears(parseInt(e.target.value))}
                     className="range-slider"
                   />
                   <div className="range-labels">
                     <span>1</span>
-                    <span>4</span>
+                    <span>8</span>
                   </div>
                 </div>
-                <p className="calculated-years">Based on Start/End Years: {startYear} - {endYear}</p>
+                <p className="calculated-years">Plan: {startYear} - {endYear}</p>
               </div>
             )}
           </div>
@@ -361,7 +389,10 @@ function Optimizer() {
                           {item}
                           <button 
                             className="remove-tag" 
-                            onClick={() => removeItem(electiveCourses, setElectiveCourses, item)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeItem(electiveCourses, setElectiveCourses, item);
+                            }}
                           >
                             ×
                           </button>
@@ -371,6 +402,10 @@ function Optimizer() {
                         type="text" 
                         placeholder="Search courses..." 
                         value={searchElectives}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowElectiveOptions(true);
+                        }}
                         onChange={(e) => {
                           setSearchElectives(e.target.value);
                           setShowElectiveOptions(true);
@@ -386,7 +421,8 @@ function Optimizer() {
                             <div 
                               key={option} 
                               className="option-item"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 addItem(electiveCourses, setElectiveCourses, option);
                                 setSearchElectives('');
                               }}
@@ -425,7 +461,10 @@ function Optimizer() {
                           {item}
                           <button 
                             className="remove-tag" 
-                            onClick={() => removeItem(completedCourses, setCompletedCourses, item)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeItem(completedCourses, setCompletedCourses, item);
+                            }}
                           >
                             ×
                           </button>
@@ -435,6 +474,10 @@ function Optimizer() {
                         type="text" 
                         placeholder="Search courses..." 
                         value={searchCompleted}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowCompletedOptions(true);
+                        }}
                         onChange={(e) => {
                           setSearchCompleted(e.target.value);
                           setShowCompletedOptions(true);
@@ -450,7 +493,8 @@ function Optimizer() {
                             <div 
                               key={option} 
                               className="option-item"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 addItem(completedCourses, setCompletedCourses, option);
                                 setSearchCompleted('');
                               }}
@@ -467,8 +511,17 @@ function Optimizer() {
           </div>
         </div>
 
+        {/* Sidebar Toggle Button */}
+        <div 
+          className={`sidebar-toggle ${sidebarCollapsed ? 'show' : ''}`}
+          onClick={toggleSidebar}
+          title={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+        >
+          {sidebarCollapsed ? '›' : '‹'}
+        </div>
+
         {/* Main Content Area for displaying potential plans */}
-        <div className="main-content">
+        <div className="main-content" ref={dropdownRef}>
           <div className="main-header">
             <h2>Potential Plans</h2>
             <p className="subtitle">Additional description if required</p>
