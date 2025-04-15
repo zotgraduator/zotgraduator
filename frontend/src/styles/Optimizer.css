@@ -124,12 +124,12 @@
   background-color: var(--primary-color);
 }
 
-/* Sidebar toggle button - make thinner with smoother transition */
+/* Sidebar toggle button - fixed to the left edge of the content area */
 .sidebar-toggle {
-  position: absolute; /* Keep as absolute within the relative container */
+  position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 16px; /* Reduced from 24px to 16px for a thinner look */
+  width: 16px;
   height: 48px;
   background-color: var(--primary-color);
   color: white;
@@ -139,16 +139,11 @@
   cursor: pointer;
   border-radius: 0 4px 4px 0;
   opacity: 0;
-  transition: opacity 0.3s ease, left 0.3s ease, transform 0.3s ease; /* Add transform to transition */
+  transition: opacity 0.3s ease;
   z-index: 15;
   font-weight: bold;
-  font-size: 0.8rem; /* Smaller font size for the arrow symbol */
-  left: calc(30% - 1px); /* Position at sidebar edge */
-}
-
-/* When sidebar is collapsed, position toggle at left edge */
-.sidebar.collapsed + .sidebar-toggle {
-  left: 0;
+  font-size: 0.8rem;
+  left: 0; /* Always fixed to the left edge */
 }
 
 .sidebar-toggle.show {
@@ -222,12 +217,20 @@
   box-sizing: border-box;
 }
 
-/* Multi-select Style */
+/* Multi-select Style - Improved Version */
 .multi-select {
   position: relative;
   border: 1px solid var(--gray-medium);
   border-radius: var(--border-radius);
   padding: 5px 10px;
+  background-color: white;
+  transition: border-color 0.3s;
+  min-height: 43px;
+}
+
+.multi-select:focus-within {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(29, 36, 52, 0.1);
 }
 
 .selected-items {
@@ -236,6 +239,7 @@
   gap: 5px;
   align-items: center;
   min-height: 35px;
+  width: 100%;
 }
 
 .tag {
@@ -245,6 +249,10 @@
   padding: 3px 8px;
   border-radius: 16px;
   font-size: 0.9rem;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .remove-tag {
@@ -256,22 +264,30 @@
   color: var(--gray-dark);
   display: flex;
   align-items: center;
+  flex-shrink: 0;
+}
+
+.search-input-container {
+  flex: 1;
+  min-width: 60px;
+  display: flex;
+  align-items: center;
 }
 
 .multi-select input {
   border: none;
   padding: 5px;
-  flex-grow: 1;
-  min-width: 60px;
+  width: 100%;
   font-size: 0.95rem;
   outline: none;
   background: transparent;
 }
 
+/* Improved options dropdown */
 .options-dropdown {
   position: absolute;
   margin-top: 5px;
-  max-height: 150px;
+  max-height: 200px;
   overflow-y: auto;
   border: 1px solid var(--gray-medium);
   border-radius: var(--border-radius);
@@ -283,14 +299,90 @@
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.option-item {
-  padding: 8px 10px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+.no-options {
+  padding: 12px;
+  text-align: center;
+  color: var(--gray-dark);
+  font-style: italic;
 }
 
-.option-item:hover {
+.option-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid var(--gray-light);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.option-item:last-child {
+  border-bottom: none;
+}
+
+.option-item:hover,
+.option-item.highlighted {
   background-color: var(--gray-light);
+}
+
+/* Standard select styling */
+.select-input,
+.multi-select-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--gray-medium);
+  border-radius: var(--border-radius);
+  font-size: 0.95rem;
+  background: white url("data:image/svg+xml;utf8,<svg fill='black' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>") no-repeat;
+  background-position: calc(100% - 10px) center;
+  background-size: 15px;
+  appearance: none;
+}
+
+/* Multi-select styling */
+.multi-select-input {
+  background-image: none; /* Remove dropdown arrow for multi-select */
+  height: auto;
+}
+
+.multi-select-input option {
+  padding: 8px;
+}
+
+.help-text {
+  margin-top: 5px;
+  font-size: 0.8rem;
+  color: var(--gray-dark);
+  font-style: italic;
+}
+
+/* Display for selected items */
+.selected-items-display {
+  margin-top: 15px;
+  background-color: var(--gray-light);
+  border-radius: var(--border-radius);
+  padding: 10px;
+}
+
+.selected-title {
+  margin: 0 0 8px 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.selected-tag {
+  background-color: var(--gray-medium);
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  display: inline-block;
 }
 
 /* Slider Styles */

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/Optimizer.css';
+import SearchableMultiSelect from '../components/SearchableMultiSelect';
 
 function Optimizer() {
   const currentYear = new Date().getFullYear();
@@ -7,22 +8,29 @@ function Optimizer() {
   const sidebarRef = useRef(null);
   
   // State for sidebar configurations
-  const [majorOptions] = useState(['Software Engineering', 'Computer Science', 'Informatics', 'Data Science']);
-  const [major, setMajor] = useState(['Software Engineering']);
-  const [searchMajor, setSearchMajor] = useState('');
-  const [showMajorOptions, setShowMajorOptions] = useState(false);
+  const [majorOptions] = useState(['Software Engineering', 'Computer Science', 'Informatics', 'Data Science', 'Business Information Management', 'Computer Game Science']);
+  const [major, setMajor] = useState('Software Engineering');
   
   const [startYear, setStartYear] = useState(currentYear);
   const [plannedYears, setPlannedYears] = useState(4);
   const [maxUnitsPerSemester, setMaxUnitsPerSemester] = useState(16);
   
-  const [electiveCourses, setElectiveCourses] = useState(['CS 165', 'CS 145', 'CS 14']);
-  const [searchElectives, setSearchElectives] = useState('');
-  const [showElectiveOptions, setShowElectiveOptions] = useState(false);
+  // Updated elective courses options
+  const [electiveOptions] = useState([
+    'CS 141', 'CS 142A', 'CS 142B', 'CS 143A', 'CS 161', 'CS 164', 
+    'CS 165', 'CS 169', 'CS 171', 'CS 172B', 'CS 175', 'CS 178',
+    'INF 121', 'INF 122', 'INF 124', 'INF 131', 'INF 133', 'INF 141',
+    'INF 143', 'INF 151', 'INF 153'
+  ]);
+  const [electiveCourses, setElectiveCourses] = useState(['CS 165', 'CS 145', 'CS 141']);
   
-  const [completedCourses, setCompletedCourses] = useState(['ICS 6N', 'ICS 32', 'ICS 4']);
-  const [searchCompleted, setSearchCompleted] = useState('');
-  const [showCompletedOptions, setShowCompletedOptions] = useState(false);
+  // Updated completed courses options
+  const [completedOptions] = useState([
+    'ICS 45C', 'ICS 45J', 'ICS 46', 'ICS 6B', 'ICS 6D', 'ICS 6N', 
+    'ICS 33', 'ICS 32', 'ICS 31', 'STATS 67', 'MATH 2A', 'MATH 2B',
+    'WRITING 39A', 'WRITING 39B', 'WRITING 39C'
+  ]);
+  const [completedCourses, setCompletedCourses] = useState(['ICS 6N', 'ICS 32', 'ICS 31']);
   
   // State for sidebar visibility
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -39,10 +47,6 @@ function Optimizer() {
 
   // State for expandable rows in the table
   const [expandedRows, setExpandedRows] = useState({});
-
-  // Mock data for suggested options
-  const electiveOptions = ['CS 141', 'CS 142A', 'CS 142B', 'CS 143A', 'CS 161', 'CS 164', 'CS 165', 'CS 169', 'CS 171', 'CS 172B', 'CS 175', 'CS 178'];
-  const completedOptions = ['ICS 45C', 'ICS 45J', 'ICS 46', 'ICS 6B', 'ICS 6D', 'ICS 6N', 'ICS 33', 'ICS 32', 'ICS 31', 'STATS 67'];
 
   // Mock plans data for the table
   const plans = [
@@ -68,46 +72,10 @@ function Optimizer() {
     }
   ];
 
-  // Add click outside listener to close dropdowns
+  // Remove the effect for toggle button positioning since it will be fixed
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowMajorOptions(false);
-        setShowElectiveOptions(false);
-        setShowCompletedOptions(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  // Add effect for smooth transition of toggle button
-  useEffect(() => {
-    const updateToggleButton = () => {
-      const sidebar = sidebarRef.current;
-      const toggle = document.querySelector('.sidebar-toggle');
-      
-      if (sidebar && toggle) {
-        if (!sidebarCollapsed) {
-          // Position at the edge of the sidebar for expanded state
-          const sidebarWidth = sidebar.getBoundingClientRect().width;
-          toggle.style.left = `${sidebarWidth - 1}px`; // -1px to account for border
-        } else {
-          // Position at left edge for collapsed state
-          toggle.style.left = '0px';
-        }
-      }
-    };
-    
-    // Run once on mount and when sidebar collapses/expands
-    updateToggleButton();
-    
-    // Also update on window resize for responsiveness
-    window.addEventListener('resize', updateToggleButton);
-    return () => window.removeEventListener('resize', updateToggleButton);
+    // No need to dynamically update position anymore
+    // We'll just toggle the sidebar collapse state
   }, [sidebarCollapsed]);
 
   // Toggle section collapse state
@@ -131,23 +99,9 @@ function Optimizer() {
     setSidebarCollapsed(prev => !prev);
   };
 
-  // Filter options based on search input
-  const getFilteredOptions = (options, searchTerm) => {
-    if (!searchTerm) return options;
-    return options.filter(option => 
-      option.toLowerCase().includes(searchTerm.toLowerCase()));
-  };
-
-  // Handle removing a selected item (tag)
-  const removeItem = (array, setArray, item) => {
-    setArray(array.filter(i => i !== item));
-  };
-
-  // Handle adding a new item to a selection
-  const addItem = (array, setArray, item) => {
-    if (!array.includes(item)) {
-      setArray([...array, item]);
-    }
+  // Handle major selection change
+  const handleMajorChange = (e) => {
+    setMajor(e.target.value);
   };
 
   // Handle start year change
@@ -156,30 +110,21 @@ function Optimizer() {
     setStartYear(value);
   };
 
+  // Handle multi-select elective courses change
+  const handleElectiveCoursesChange = (selectedOptions) => {
+    setElectiveCourses(selectedOptions);
+  };
+
+  // Handle multi-select completed courses change
+  const handleCompletedCoursesChange = (selectedOptions) => {
+    setCompletedCourses(selectedOptions);
+  };
+
   // Calculate end year based on start year and planned years
   const endYear = startYear + plannedYears;
 
   return (
     <div className="optimizer-page">
-      {/* Top Navigation/Header */}
-      <header className="optimizer-header">
-        <div className="header-left">
-          <div className="header-actions">
-            <button className="icon-button create-button">
-              <i className="fas fa-plus"></i> CREATE
-            </button>
-            <button className="icon-button sync-button">
-              <i className="fas fa-users"></i> SYNC WITH FRIENDS
-            </button>
-          </div>
-        </div>
-        <div className="user-profile">
-          <div className="avatar">
-            <i className="fas fa-user"></i>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content with Sidebar and Results */}
       <div className="optimizer-content">
         {/* Left Sidebar for Configuration */}
@@ -203,58 +148,15 @@ function Optimizer() {
                 <p className="section-instruction">Select your major</p>
                 <div className="input-container">
                   <label className="input-label">Option</label>
-                  <div className="multi-select">
-                    <div className="selected-items">
-                      {major.map((item) => (
-                        <span key={item} className="tag">
-                          {item}
-                          <button 
-                            className="remove-tag" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeItem(major, setMajor, item);
-                            }}
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                      <input 
-                        type="text" 
-                        placeholder="Search majors..." 
-                        value={searchMajor}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowMajorOptions(true);
-                        }}
-                        onChange={(e) => {
-                          setSearchMajor(e.target.value);
-                          setShowMajorOptions(true);
-                        }}
-                        onFocus={() => setShowMajorOptions(true)}
-                      />
-                    </div>
-                    {showMajorOptions && (
-                      <div className="options-dropdown">
-                        {getFilteredOptions(majorOptions, searchMajor)
-                          .filter(option => !major.includes(option))
-                          .map((option) => (
-                            <div 
-                              key={option} 
-                              className="option-item"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                addItem(major, setMajor, option);
-                                setSearchMajor('');
-                                setShowMajorOptions(false);
-                              }}
-                            >
-                              {option}
-                            </div>
-                          ))}
-                      </div>
-                    )}
-                  </div>
+                  <select 
+                    className="select-input"
+                    value={major}
+                    onChange={handleMajorChange}
+                  >
+                    {majorOptions.map(option => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}
@@ -379,60 +281,15 @@ function Optimizer() {
             </div>
             {!collapsedSections.electives && (
               <div className="section-content">
-                <p className="section-instruction">Enter the electives you are interested in taking</p>
+                <p className="section-instruction">Select elective courses you're interested in taking</p>
                 <div className="input-container">
-                  <label className="input-label">Option</label>
-                  <div className="multi-select">
-                    <div className="selected-items">
-                      {electiveCourses.map((item) => (
-                        <span key={item} className="tag">
-                          {item}
-                          <button 
-                            className="remove-tag" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeItem(electiveCourses, setElectiveCourses, item);
-                            }}
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                      <input 
-                        type="text" 
-                        placeholder="Search courses..." 
-                        value={searchElectives}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowElectiveOptions(true);
-                        }}
-                        onChange={(e) => {
-                          setSearchElectives(e.target.value);
-                          setShowElectiveOptions(true);
-                        }}
-                        onFocus={() => setShowElectiveOptions(true)}
-                      />
-                    </div>
-                    {showElectiveOptions && (
-                      <div className="options-dropdown">
-                        {getFilteredOptions(electiveOptions, searchElectives)
-                          .filter(option => !electiveCourses.includes(option))
-                          .map((option) => (
-                            <div 
-                              key={option} 
-                              className="option-item"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                addItem(electiveCourses, setElectiveCourses, option);
-                                setSearchElectives('');
-                              }}
-                            >
-                              {option}
-                            </div>
-                          ))}
-                      </div>
-                    )}
-                  </div>
+                  <label className="input-label">Elective Courses</label>
+                  <SearchableMultiSelect
+                    options={electiveOptions}
+                    selectedValues={electiveCourses}
+                    onChange={handleElectiveCoursesChange}
+                    placeholder="Search for electives..."
+                  />
                 </div>
               </div>
             )}
@@ -451,67 +308,22 @@ function Optimizer() {
             </div>
             {!collapsedSections.completed && (
               <div className="section-content">
-                <p className="section-instruction">Enter the courses you have already completed</p>
+                <p className="section-instruction">Select courses you have already completed</p>
                 <div className="input-container">
-                  <label className="input-label">Option</label>
-                  <div className="multi-select">
-                    <div className="selected-items">
-                      {completedCourses.map((item) => (
-                        <span key={item} className="tag">
-                          {item}
-                          <button 
-                            className="remove-tag" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeItem(completedCourses, setCompletedCourses, item);
-                            }}
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                      <input 
-                        type="text" 
-                        placeholder="Search courses..." 
-                        value={searchCompleted}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowCompletedOptions(true);
-                        }}
-                        onChange={(e) => {
-                          setSearchCompleted(e.target.value);
-                          setShowCompletedOptions(true);
-                        }}
-                        onFocus={() => setShowCompletedOptions(true)}
-                      />
-                    </div>
-                    {showCompletedOptions && (
-                      <div className="options-dropdown">
-                        {getFilteredOptions(completedOptions, searchCompleted)
-                          .filter(option => !completedCourses.includes(option))
-                          .map((option) => (
-                            <div 
-                              key={option} 
-                              className="option-item"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                addItem(completedCourses, setCompletedCourses, option);
-                                setSearchCompleted('');
-                              }}
-                            >
-                              {option}
-                            </div>
-                          ))}
-                      </div>
-                    )}
-                  </div>
+                  <label className="input-label">Completed Courses</label>
+                  <SearchableMultiSelect
+                    options={completedOptions}
+                    selectedValues={completedCourses}
+                    onChange={handleCompletedCoursesChange}
+                    placeholder="Search for completed courses..."
+                  />
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Sidebar Toggle Button */}
+        {/* Sidebar Toggle Button - now fixed to left edge */}
         <div 
           className={`sidebar-toggle ${sidebarCollapsed ? 'show' : ''}`}
           onClick={toggleSidebar}
