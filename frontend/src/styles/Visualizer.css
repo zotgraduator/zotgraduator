@@ -1,0 +1,27 @@
+.visualizer-page {
+  background-color: var(--gray-light);
+  height: calc(100vh - 105px); /* Full height minus header */
+  margin-bottom: 0;
+  padding: 40px 20px;
+}
+
+.visualizer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: white;
+  padding: 40px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  text-align: center;
+}
+
+.visualizer-content h1 {
+  color: var(--primary-color);
+  margin-bottom: 30px;
+}
+
+.placeholder-text {
+  color: var(--gray-dark);
+  font-size: 1.2rem;
+  margin: 60px 0;
+}

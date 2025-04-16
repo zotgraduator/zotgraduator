@@ -5,6 +5,7 @@ import './styles/Account.css';
 import './styles/AboutUs.css';
 import './styles/Legal.css';
 import Optimizer from './pages/Optimizer';
+import Visualizer from './pages/Visualizer';
 import Social from './pages/Social';
 import Account from './pages/Account';
 import TermsAndConditions from './pages/TermsAndConditions';
@@ -21,6 +22,7 @@ function App() {
         </Link>
         <nav>
           <Link to="/optimizer">Optimizer</Link>
+          <Link to="/visualizer">Visualizer</Link>
           <Link to="/social">Social</Link>
           <Link to="/account">Account</Link>
         </nav>
@@ -29,6 +31,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/optimizer" element={<Optimizer />} />
+          <Route path="/visualizer" element={<Visualizer />} />
           <Route path="/social" element={<Social />} />
           <Route path="/account" element={<Account />} />
           <Route path="/terms" element={<TermsAndConditions />} />
