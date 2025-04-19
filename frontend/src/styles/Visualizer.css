@@ -1,27 +1,231 @@
 .visualizer-page {
-  background-color: var(--gray-light);
+  background-color: white;
   height: calc(100vh - 105px); /* Full height minus header */
   margin-bottom: 0;
-  padding: 40px 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
-.visualizer-content {
+.search-header {
+  padding: 20px 0;
+  z-index: 10;
+  background-color: white;
+}
+
+.visualizer-container {
   max-width: 1200px;
   margin: 0 auto;
-  background-color: white;
-  padding: 40px;
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow);
+  padding: 0 20px;
+}
+
+.visualizer-container h1 {
+  color: var(--primary-color);
+  margin-bottom: 20px;
   text-align: center;
 }
 
-.visualizer-content h1 {
-  color: var(--primary-color);
+.visualizer-description {
+  text-align: center;
+  color: var(--gray-dark);
   margin-bottom: 30px;
 }
 
-.placeholder-text {
+.search-form {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.search-input {
+  flex: 1;
+  padding: 12px 20px;
+  border: 2px solid var(--gray-medium);
+  border-radius: 30px 0 0 30px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+  max-width: 500px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.search-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  font-weight: 600;
+  border-radius: 0 30px 30px 0;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.search-button:hover {
+  background-color: #15192a;
+}
+
+.help-container {
+  position: relative;
+  margin-left: 10px;
+}
+
+.help-button {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--gray-medium);
   color: var(--gray-dark);
-  font-size: 1.2rem;
-  margin: 60px 0;
+  font-weight: bold;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.help-button:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.help-tooltip {
+  position: absolute;
+  right: 0;
+  top: 30px;
+  width: 300px;
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  padding: 15px;
+  font-size: 0.9rem;
+  z-index: 100;
+  text-align: left;
+}
+
+.help-tooltip p {
+  margin: 0 0 10px;
+}
+
+.help-tooltip ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+.help-tooltip li {
+  margin-bottom: 5px;
+}
+
+.reorganize-button {
+  margin-left: 10px;
+  background-color: var(--gray-light);
+  color: var(--text-dark);
+  border: 1px solid var(--gray-medium);
+  padding: 8px 15px;
+  border-radius: 30px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reorganize-button:hover {
+  background-color: var(--gray-medium);
+}
+
+.graph-container {
+  flex: 1;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.initial-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--gray-dark);
+  font-size: 1.1rem;
+}
+
+.example-text {
+  color: var(--primary-color);
+  font-size: 0.9rem;
+  margin-top: 15px;
+}
+
+.not-found-message {
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+  border-left: 4px solid #ffc107;
+  border-radius: var(--border-radius);
+  color: #856404;
+  margin: 15px auto 0;
+  max-width: 600px;
+  padding: 10px 15px;
+  text-align: center;
+}
+
+/* Tooltip styling (would be implemented with a tooltip library) */
+.tooltip {
+  background-color: #333;
+  border-radius: 4px;
+  color: white;
+  font-size: 12px;
+  padding: 5px 10px;
+  position: absolute;
+  z-index: 100;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .visualizer-container h1 {
+    font-size: 1.8rem;
+  }
+  
+  .graph-container {
+    height: 450px;
+  }
+  
+  .search-container {
+    flex-wrap: wrap;
+  }
+  
+  .search-input {
+    border-radius: var(--border-radius);
+    width: 100%;
+    max-width: none;
+  }
+  
+  .search-button {
+    border-radius: var(--border-radius);
+    margin-top: 10px;
+    width: 100%;
+  }
+  
+  .help-container {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+  }
+  
+  .reorganize-button {
+    margin: 10px 0 0 0;
+    width: 100%;
+  }
 }
