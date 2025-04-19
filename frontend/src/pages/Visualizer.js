@@ -3,96 +3,11 @@ import Cytoscape from 'cytoscape';
 import COSEBilkent from 'cytoscape-cose-bilkent';
 import fcose from 'cytoscape-fcose';
 import '../styles/Visualizer.css';
+import courseData from '../data/course_data_with_logical_prereqs.json';
 
 // Register the layouts with Cytoscape
 Cytoscape.use(COSEBilkent);
 Cytoscape.use(fcose);
-
-// Mock data structure - would be replaced with actual JSON import
-const mockCourseData = {
-  "COMPSCI 161": {
-    "title": "Design and Analysis of Algorithms",
-    "units": "4",
-    "description": "Techniques for efficient algorithm design, including divide-and-conquer and dynamic programming, and time/space analysis. Fast algorithms for problems applicable to networks, computer games, and scientific computing, such as sorting, shortest paths, minimum spanning trees, network flow, and pattern matching.",
-    "prerequisites": "I&C SCI 46 and I&C SCI 6D and (MATH 2B or AP Calculus BC)",
-    "parsed_prerequisites": {
-      "and": ["I&C SCI 46", "I&C SCI 6D", { "or": ["MATH 2B", "AP Calculus BC"] }]
-    }
-  },
-  "I&C SCI 46": {
-    "title": "Data Structure Implementation and Analysis",
-    "units": "4",
-    "description": "Focuses on implementation and mathematical analysis of fundamental data structures and algorithms. Covers storage allocation and memory management techniques.",
-    "prerequisites": "I&C SCI 45C AND I&C SCI 6B",
-    "parsed_prerequisites": {
-      "and": ["I&C SCI 45C", "I&C SCI 6B"]
-    }
-  },
-  "I&C SCI 45C": {
-    "title": "Programming in C/C++ as a Second Language",
-    "units": "4",
-    "description": "An introduction to the lexical, syntactic, semantic, and pragmatic characteristics of the C/C++ languages for experienced programmers. Emphasis on object-oriented programming, using standard libraries, and programming with manual garbage collection.",
-    "prerequisites": "(I&C SCI 33 or CSE 43) or AP Computer Science A",
-    "parsed_prerequisites": {
-      "or": ["I&C SCI 33", "CSE 43", "AP Computer Science A"]
-    }
-  },
-  "I&C SCI 33": {
-    "title": "Intermediate Programming",
-    "units": "4",
-    "description": "Intermediate-level language features and programming concepts for larger, more complex, higher-performance software. Topics include recursion, algorithmic analysis, data structures, and object-oriented programming.",
-    "prerequisites": "I&C SCI 32 or CSE 42",
-    "parsed_prerequisites": {
-      "or": ["I&C SCI 32", "CSE 42"]
-    }
-  },
-  "I&C SCI 32": {
-    "title": "Programming with Software Libraries",
-    "units": "4",
-    "description": "Construction of programs for problems and computing environments more varied than in I&C SCI 31. Using library modules for applications such as graphics, sound, GUI, database, Web, and network programming. Language features beyond those in I&C SCI 31 are introduced as needed.",
-    "prerequisites": "I&C SCI 31 or CSE 41",
-    "parsed_prerequisites": {
-      "or": ["I&C SCI 31", "CSE 41"]
-    }
-  },
-  "I&C SCI 31": {
-    "title": "Introduction to Programming",
-    "units": "4",
-    "description": "Introduction to fundamental concepts and techniques for writing software in a high-level programming language. Covers the syntax and semantics of data types, expressions, exceptions, control structures, input/output, methods, classes, and pragmatics of programming.",
-    "prerequisites": "N/A",
-    "parsed_prerequisites": "N/A"
-  },
-  "I&C SCI 6B": {
-    "title": "Boolean Logic and Discrete Structures",
-    "units": "4",
-    "description": "Relations and their properties; Boolean algebras, formal languages; finite automata.",
-    "prerequisites": "High school mathematics through trigonometry.",
-    "parsed_prerequisites": "N/A"
-  },
-  "I&C SCI 6D": {
-    "title": "Discrete Mathematics for Computer Science",
-    "units": "4",
-    "description": "Covers essential tools from discrete mathematics used in computer science with an emphasis on the process of abstracting computational problems and analyzing them mathematically.",
-    "prerequisites": "High school mathematics through trigonometry.",
-    "parsed_prerequisites": "N/A"
-  },
-  "MATH 2B": {
-    "title": "Single-Variable Calculus II",
-    "units": "4",
-    "description": "Definite integrals; the fundamental theorem of calculus. Applications of integration including finding areas and volumes. Techniques of integration. Infinite sequences and series.",
-    "prerequisites": "MATH 2A or AP Calculus AB",
-    "parsed_prerequisites": {
-      "or": ["MATH 2A", "AP Calculus AB"]
-    }
-  },
-  "MATH 2A": {
-    "title": "Single-Variable Calculus I",
-    "units": "4",
-    "description": "Introduction to derivatives, calculation of derivatives of algebraic and trigonometric functions; applications including curve sketching, related rates, and optimization. Exponential and logarithm functions.",
-    "prerequisites": "N/A",
-    "parsed_prerequisites": "N/A"
-  }
-};
 
 function Visualizer() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -105,7 +20,7 @@ function Visualizer() {
 
   // Function to convert parsed prereq data into Cytoscape elements
   const buildGraphElements = (courseName) => {
-    if (!mockCourseData[courseName]) {
+    if (!courseData[courseName]) {
       setCourseNotFound(true);
       return [];
     }
@@ -136,14 +51,14 @@ function Visualizer() {
       visited.add(course);
 
       // Add course node if it exists in our data
-      if (mockCourseData[course]) {
-        const courseData = mockCourseData[course];
+      if (courseData[course]) {
+        const courseInfo = courseData[course];
         elements.push({
           group: 'nodes',
           data: { 
             id: course, 
             label: course,
-            title: courseData.title 
+            title: courseInfo.title 
           }
         });
 
@@ -160,7 +75,7 @@ function Visualizer() {
         }
 
         // Process prerequisites if they exist
-        const prereqs = courseData.parsed_prerequisites;
+        const prereqs = courseInfo.parsed_prerequisites;
         if (prereqs && prereqs !== 'N/A') {
           processLogicalStructure(prereqs, course);
         }
@@ -230,21 +145,21 @@ function Visualizer() {
           if (typeof item === 'string') {
             // Add the course node if needed
             if (!visited.has(item)) {
-              if (mockCourseData[item]) {
-                const courseData = mockCourseData[item];
+              if (courseData[item]) {
+                const courseInfo = courseData[item];
                 elements.push({
                   group: 'nodes',
                   data: { 
                     id: item, 
                     label: item,
-                    title: courseData.title,
+                    title: courseInfo.title,
                     parent: groupId
                   }
                 });
                 visited.add(item);
                 
                 // Process this course's prerequisites
-                const prereqs = courseData.parsed_prerequisites;
+                const prereqs = courseInfo.parsed_prerequisites;
                 if (prereqs && prereqs !== 'N/A') {
                   processLogicalStructure(prereqs, item);
                 }
@@ -453,7 +368,7 @@ function Visualizer() {
     setHasSearched(true);
     
     // Try to find the course in different case formats
-    const matchingCourse = Object.keys(mockCourseData).find(
+    const matchingCourse = Object.keys(courseData).find(
       course => course.toUpperCase() === formattedQuery
     );
     
