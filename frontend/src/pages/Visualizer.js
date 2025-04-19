@@ -2,18 +2,20 @@ import React, { useState, useRef, useEffect } from 'react';
 import Cytoscape from 'cytoscape';
 import COSEBilkent from 'cytoscape-cose-bilkent';
 import fcose from 'cytoscape-fcose';
+import dagre from 'cytoscape-dagre';
 import '../styles/Visualizer.css';
 import courseData from '../data/course_data_with_logical_prereqs.json';
 
 // Register the layouts with Cytoscape
 Cytoscape.use(COSEBilkent);
 Cytoscape.use(fcose);
+Cytoscape.use(dagre);
 
-// Define a set of distinct colors for core classes
-const CORE_CLASS_COLORS = [
-  '#8dd3c7', '#ffffb3', '#bebada', '#fb8072', '#80b1d3', 
-  '#fdb462', '#b3de69', '#fccde5', '#d9d9d9', '#bc80bd',
-  '#ccebc5', '#ffed6f', '#a6cee3', '#1f78b4', '#b2df8a'
+// Define a set of distinct colors for core class trees (qualitative palette)
+const CORE_TREE_BASE_COLORS = [
+  '#1f78b4', '#33a02c', '#e31a1c', '#ff7f00', '#6a3d9a',
+  '#a6cee3', '#b2df8a', '#fb9a99', '#fdbf6f', '#cab2d6',
+  '#8dd3c7', '#bebada', '#fb8072', '#80b1d3', '#fdb462'
 ];
 
 function Visualizer() {
@@ -21,88 +23,154 @@ function Visualizer() {
   const [courseNotFound, setCourseNotFound] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [isHelpTooltipVisible, setIsHelpTooltipVisible] = useState(false);
-  const [coreClasses, setCoreClasses] = useState({});
-  const cyRef = useRef(null);
-  const containerRef = useRef(null);
-  const cyInstance = useRef(null);
+  const [selectedCoreClass, setSelectedCoreClass] = useState(null);
+  const mainContainerRef = useRef(null);
+  const coreTreeContainerRef = useRef(null);
+  const cyInstances = useRef({
+    main: null,
+    coreTree: null
+  });
 
   // Function to convert parsed prereq data into Cytoscape elements
   const buildGraphElements = (courseName) => {
     if (!courseData[courseName]) {
       setCourseNotFound(true);
-      return [];
+      return { main: [], coreTrees: [] };
     }
 
     setCourseNotFound(false);
     
-    // First pass: count occurrences of each course in the prerequisite tree
+    // First pass: Count occurrences and map prerequisite chains
     const classOccurrences = new Map();
+    const dependencyMap = new Map(); // Maps course -> courses that depend on it
+    const prereqMap = new Map();     // Maps course -> courses it depends on
     const visited = new Set();
     
-    // Function to count course occurrences in the prerequisite tree
-    const countCourseOccurrences = (course, visited = new Set()) => {
+    // Function to count occurrences and build dependency graphs
+    const countAndMapDependencies = (course, parent = null, visited = new Set()) => {
       if (visited.has(course)) return;
       visited.add(course);
       
-      // Skip the course itself from being counted
+      // Add to dependency map (what courses depend on this one)
+      if (parent) {
+        if (!dependencyMap.has(course)) {
+          dependencyMap.set(course, new Set());
+        }
+        dependencyMap.get(course).add(parent);
+      }
+      
+      // Count occurrences (skip main course)
       if (course !== courseName) {
         classOccurrences.set(course, (classOccurrences.get(course) || 0) + 1);
       }
       
+      // Process prerequisites
       const courseInfo = courseData[course];
       if (!courseInfo || !courseInfo.parsed_prerequisites || courseInfo.parsed_prerequisites === 'N/A') return;
       
-      const prereqs = courseInfo.parsed_prerequisites;
-      traversePrereqs(prereqs, visited);
+      // Map this course's prerequisites and continue traversing
+      traversePrereqs(courseInfo.parsed_prerequisites, course, visited);
     };
     
-    // Traverse the prerequisite structure recursively
-    const traversePrereqs = (structure, visited) => {
+    // Recursively traverse prerequisites
+    const traversePrereqs = (structure, parent, visited) => {
       if (typeof structure === 'string') {
-        countCourseOccurrences(structure, new Set([...visited]));
+        // Add to prerequisite map (what courses this one depends on)
+        if (!prereqMap.has(parent)) {
+          prereqMap.set(parent, new Set());
+        }
+        prereqMap.get(parent).add(structure);
+        
+        // Continue counting and mapping
+        countAndMapDependencies(structure, parent, new Set([...visited]));
       } else if (structure.and) {
-        structure.and.forEach(item => {
-          traversePrereqs(item, new Set([...visited]));
-        });
+        structure.and.forEach(item => traversePrereqs(item, parent, new Set([...visited])));
       } else if (structure.or) {
-        structure.or.forEach(item => {
-          traversePrereqs(item, new Set([...visited]));
-        });
+        structure.or.forEach(item => traversePrereqs(item, parent, new Set([...visited])));
       }
     };
     
-    // Start the counting process from the main course
-    countCourseOccurrences(courseName);
+    // Start the counting and mapping process with the main course
+    countAndMapDependencies(courseName);
     
-    // Identify core classes (appearing 2 or more times)
-    const coreClassesMap = {};
-    let colorIndex = 0;
+    // Identify potential core classes (appearing >= 2 times)
+    const potentialCoreCourses = Array.from(classOccurrences.entries())
+      .filter(([course, count]) => count >= 2 && courseData[course])
+      .map(([course]) => course);
     
-    classOccurrences.forEach((count, course) => {
-      if (count >= 2) {
-        coreClassesMap[course] = {
-          color: CORE_CLASS_COLORS[colorIndex % CORE_CLASS_COLORS.length],
-          count: count
-        };
-        colorIndex++;
+    // Function to check if a course is an ancestor of another course
+    const isAncestorOf = (ancestor, descendant) => {
+      if (ancestor === descendant) return false;
+      
+      // Check if ancestor is a prerequisite of descendant (directly or indirectly)
+      const visited = new Set();
+      const queue = [descendant];
+      
+      while (queue.length > 0) {
+        const current = queue.shift();
+        if (visited.has(current)) continue;
+        visited.add(current);
+        
+        if (prereqMap.has(current)) {
+          for (const prereq of prereqMap.get(current)) {
+            if (prereq === ancestor) return true;
+            queue.push(prereq);
+          }
+        }
       }
+      
+      return false;
+    };
+    
+    // Determine highest-order core classes
+    const highestOrderCoreCourses = new Map();
+    
+    // First pass: Add all potential core courses
+    potentialCoreCourses.forEach(course => {
+      highestOrderCoreCourses.set(course, true);
     });
     
-    // Store the core classes for the legend display
-    setCoreClasses(coreClassesMap);
+    // Second pass: Remove courses that are prerequisites of other core courses
+    potentialCoreCourses.forEach(courseA => {
+      potentialCoreCourses.forEach(courseB => {
+        if (courseA !== courseB && isAncestorOf(courseA, courseB) && highestOrderCoreCourses.has(courseA)) {
+          highestOrderCoreCourses.delete(courseA);
+        }
+      });
+    });
     
-    // Second pass: build the graph elements
+    // Map colors to the remaining highest-order core courses
+    const coreCoursesWithColors = new Map();
+    let colorIndex = 0;
+    
+    highestOrderCoreCourses.forEach((_, course) => {
+      coreCoursesWithColors.set(course, {
+        color: CORE_TREE_BASE_COLORS[colorIndex % CORE_TREE_BASE_COLORS.length],
+        count: classOccurrences.get(course)
+      });
+      colorIndex++;
+    });
+    
+    // Define core trees for popups
+    const coreTreesData = Array.from(coreCoursesWithColors.entries())
+      .map(([course, data]) => ({
+        course,
+        color: data.color,
+        count: data.count
+      }));
+    
+    // Second pass: Build the main graph with core class abstractions
     visited.clear();
     const elements = [];
     const compoundGroups = {};
     let groupCounter = 0;
     
-    // Keep track of all dependencies for edge creation
+    // Track dependencies for edge creation
     const dependencies = new Map();
     const orGroupDependencies = new Map();
     
     // Process prerequisites and build graph
-    const processPrereqs = (course, targetId = null) => {
+    const processPrereqs = (course, targetId = null, isMainCourse = false) => {
       // Add dependency for edge creation
       if (targetId) {
         if (!dependencies.has(course)) {
@@ -111,40 +179,44 @@ function Visualizer() {
         dependencies.get(course).push(targetId);
       }
       
-      // If we've visited this course, we still add edges but don't recreate nodes
-      if (visited.has(course)) return;
+      // For core classes, we create a new node instance each time
+      const isCoreClass = coreCoursesWithColors.has(course) && !isMainCourse;
+      const nodeId = isCoreClass ? `${course}-${Math.random().toString(36).substring(7)}` : course;
       
-      visited.add(course);
+      // Skip if we've already processed this non-core course
+      if (!isCoreClass && visited.has(course)) return;
+      if (!isCoreClass) visited.add(course);
       
       // Add course node
       if (courseData[course]) {
         const courseInfo = courseData[course];
-        const isCore = coreClassesMap[course];
-        
-        // Create node with core class styling if applicable
         elements.push({
           group: 'nodes',
           data: {
-            id: course,
-            label: isCore ? '' : course, // No label for core classes
+            id: nodeId,
+            originalId: course,
+            label: isCoreClass ? '' : course, // No label for core classes
             title: courseInfo.title || course,
-            isCore: isCore ? true : false,
-            coreColor: isCore ? coreClassesMap[course].color : null
+            isCore: isCoreClass,
+            coreColor: isCoreClass ? coreCoursesWithColors.get(course).color : null
           },
-          classes: isCore ? 'core-class' : ''
+          classes: isCoreClass ? 'core-class' : ''
         });
         
-        // Process this course's prerequisites
-        const prereqs = courseInfo.parsed_prerequisites;
-        if (prereqs && prereqs !== 'N/A') {
-          processLogicalStructure(prereqs, course);
+        // For non-core classes or the main course, process their prerequisites
+        if (!isCoreClass) {
+          const prereqs = courseInfo.parsed_prerequisites;
+          if (prereqs && prereqs !== 'N/A') {
+            processLogicalStructure(prereqs, course);
+          }
         }
       } else if (course !== 'N/A') {
-        // For external prerequisites
+        // External prerequisite
         elements.push({
           group: 'nodes',
           data: {
-            id: course,
+            id: nodeId,
+            originalId: course,
             label: course,
             title: "External Prerequisite"
           },
@@ -205,12 +277,16 @@ function Visualizer() {
           // Process OR options
           structure.or.forEach(item => {
             if (typeof item === 'string') {
-              processPrereqs(item, null);
+              processPrereqs(item);
               
-              // Add as child of OR group
-              const existingNode = elements.find(ele => ele.data && ele.data.id === item);
-              if (existingNode) {
-                existingNode.data.parent = groupId;
+              // Find all nodes with this course ID
+              const courseNodes = elements.filter(ele => 
+                ele.data && ele.data.originalId === item && !ele.data.parent);
+              
+              // Use the last added node (or create one if needed)
+              if (courseNodes.length > 0) {
+                const lastNode = courseNodes[courseNodes.length - 1];
+                lastNode.data.parent = groupId;
               }
             } else {
               // Handle nested logical structures
@@ -263,8 +339,239 @@ function Visualizer() {
       }
     };
     
-    // Start building the graph from the searched course
-    processPrereqs(courseName);
+    // Start building the graph with the main course
+    processPrereqs(courseName, null, true);
+    
+    // Add all edges
+    dependencies.forEach((targets, source) => {
+      targets.forEach(target => {
+        // Find all nodes with this source ID
+        const sourceNodes = elements.filter(ele => 
+          ele.data && (ele.data.id === source || ele.data.originalId === source));
+          
+        // Create edges for each matching source node
+        sourceNodes.forEach(sourceNode => {
+          elements.push({
+            group: 'edges',
+            data: {
+              id: `edge-${sourceNode.data.id}-${target}`,
+              source: sourceNode.data.id,
+              target: target
+            }
+          });
+        });
+      });
+    });
+    
+    // Add OR group edges
+    orGroupDependencies.forEach((targets, groupId) => {
+      targets.forEach(target => {
+        elements.push({
+          group: 'edges',
+          data: {
+            id: `edge-${groupId}-${target}`,
+            source: groupId,
+            target: target
+          }
+        });
+      });
+    });
+    
+    return {
+      main: elements,
+      coreTrees: coreTreesData
+    };
+  };
+
+  // Function to build a core class tree
+  const buildCoreClassTree = (coreClass) => {
+    if (!coreClass || !courseData[coreClass.course]) return [];
+    
+    const elements = [];
+    const visited = new Set();
+    const compoundGroups = {};
+    let groupCounter = 0;
+    
+    // Track dependencies for edge creation
+    const dependencies = new Map();
+    const orGroupDependencies = new Map();
+    
+    // Create sequential color variations based on depth
+    const generateSequentialColor = (baseColor, depth) => {
+      // Convert hex to RGB
+      const hex = baseColor.replace('#', '');
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      
+      // Adjust brightness based on depth (deeper = darker)
+      const factor = Math.max(0.6, 1.0 - (depth * 0.15));
+      
+      // Calculate new RGB values
+      const newR = Math.min(255, Math.max(0, Math.round(r * factor)));
+      const newG = Math.min(255, Math.max(0, Math.round(g * factor)));
+      const newB = Math.min(255, Math.max(0, Math.round(b * factor)));
+      
+      // Convert back to hex
+      return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+    };
+    
+    // Process a course node
+    const processNode = (course, depth = 0, targetId = null) => {
+      // Add dependency for edge creation
+      if (targetId) {
+        if (!dependencies.has(course)) {
+          dependencies.set(course, []);
+        }
+        dependencies.get(course).push(targetId);
+      }
+      
+      // Skip if already visited
+      if (visited.has(course)) return;
+      visited.add(course);
+      
+      // Generate color based on depth
+      const nodeColor = generateSequentialColor(coreClass.color, depth);
+      
+      // Add course node
+      if (courseData[course]) {
+        const courseInfo = courseData[course];
+        elements.push({
+          group: 'nodes',
+          data: {
+            id: course,
+            label: course,
+            title: courseInfo.title || course,
+            depth: depth,
+            color: nodeColor,
+            isRoot: course === coreClass.course
+          },
+          classes: course === coreClass.course ? 'core-root' : ''
+        });
+        
+        // Process prerequisites
+        const prereqs = courseInfo.parsed_prerequisites;
+        if (prereqs && prereqs !== 'N/A') {
+          processLogicalStructure(prereqs, course, depth + 1);
+        }
+      } else if (course !== 'N/A') {
+        // External prerequisite
+        elements.push({
+          group: 'nodes',
+          data: {
+            id: course,
+            label: course,
+            title: "External Prerequisite",
+            depth: depth,
+            color: nodeColor
+          },
+          classes: 'external-prereq'
+        });
+      }
+    };
+    
+    // Process logical structures in core tree
+    const processLogicalStructure = (structure, targetId, depth) => {
+      if (typeof structure === 'string') {
+        processNode(structure, depth, targetId);
+      } else if (structure.and) {
+        structure.and.forEach(item => {
+          processLogicalStructure(item, targetId, depth);
+        });
+      } else if (structure.or) {
+        // Create OR group
+        const groupId = `or-group-${groupCounter++}`;
+        const groupColor = generateSequentialColor(coreClass.color, depth);
+        
+        elements.push({
+          group: 'nodes',
+          data: {
+            id: groupId,
+            label: 'OR',
+            color: '#f8f9fa',
+            borderColor: groupColor
+          },
+          classes: 'or-group'
+        });
+        
+        // Add edge from OR group to target
+        if (!orGroupDependencies.has(groupId)) {
+          orGroupDependencies.set(groupId, []);
+        }
+        orGroupDependencies.get(groupId).push(targetId);
+        
+        // Process OR options
+        structure.or.forEach(item => {
+          if (typeof item === 'string') {
+            processNode(item, depth, null);
+            
+            // Find the node and set its parent
+            const courseNode = elements.find(ele => 
+              ele.data && ele.data.id === item);
+              
+            if (courseNode) {
+              courseNode.data.parent = groupId;
+            }
+          } else {
+            // Handle nested structure
+            const nestedId = `nested-${elements.length}`;
+            processNestedLogical(item, nestedId, groupId, depth + 1);
+          }
+        });
+      }
+    };
+    
+    // Handle nested logical structures
+    const processNestedLogical = (structure, nodeId, parentId, depth) => {
+      const groupColor = generateSequentialColor(coreClass.color, depth);
+      
+      if (structure.and) {
+        elements.push({
+          group: 'nodes',
+          data: {
+            id: nodeId,
+            label: 'AND',
+            parent: parentId,
+            color: '#f8f9fa',
+            borderColor: groupColor
+          },
+          classes: 'and-group'
+        });
+        
+        structure.and.forEach(item => {
+          if (typeof item === 'string') {
+            processNode(item, depth, nodeId);
+          } else {
+            const subId = `sub-${elements.length}`;
+            processNestedLogical(item, subId, nodeId, depth + 1);
+          }
+        });
+      } else if (structure.or) {
+        elements.push({
+          group: 'nodes',
+          data: {
+            id: nodeId,
+            label: 'OR',
+            parent: parentId,
+            color: '#f8f9fa',
+            borderColor: groupColor
+          },
+          classes: 'or-group'
+        });
+        
+        structure.or.forEach(item => {
+          if (typeof item === 'string') {
+            processNode(item, depth, nodeId);
+          } else {
+            const subId = `sub-${elements.length}`;
+            processNestedLogical(item, subId, nodeId, depth + 1);
+          }
+        });
+      }
+    };
+    
+    // Start building the core tree from the root core class
+    processNode(coreClass.course);
     
     // Add all edges
     dependencies.forEach((targets, source) => {
@@ -297,16 +604,16 @@ function Visualizer() {
     return elements;
   };
 
-  // Initialize or update the Cytoscape graph
-  const renderGraph = (elements) => {
+  // Initialize or update the main Cytoscape graph
+  const renderMainGraph = (elements) => {
     if (elements.length === 0) return;
     
-    if (cyInstance.current) {
-      cyInstance.current.destroy();
+    if (cyInstances.current.main) {
+      cyInstances.current.main.destroy();
     }
 
-    cyInstance.current = Cytoscape({
-      container: containerRef.current,
+    cyInstances.current.main = Cytoscape({
+      container: mainContainerRef.current,
       elements: elements,
       style: [
         {
@@ -338,7 +645,8 @@ function Visualizer() {
             'shape': 'ellipse',
             'border-width': '2px',
             'border-color': '#444',
-            'padding': '2px'
+            'padding': '2px',
+            'cursor': 'pointer'
           }
         },
         {
@@ -415,72 +723,280 @@ function Visualizer() {
       }
     });
     
+    // Add click event for core class nodes
+    cyInstances.current.main.on('tap', 'node.core-class', function(evt) {
+      const node = evt.target;
+      const courseId = node.data('originalId');
+      
+      // Find the corresponding core tree from the available core trees
+      const coreTree = window.coreTrees?.find(tree => tree.course === courseId);
+      if (coreTree) {
+        setSelectedCoreClass(coreTree);
+      }
+    });
+    
     // Add tooltips for nodes
-    cyInstance.current.on('mouseover', 'node', function(e) {
+    cyInstances.current.main.on('mouseover', 'node', function(e) {
       const node = e.target;
       if (node.data('title')) {
-        // Show additional info for core classes
-        if (node.data('isCore')) {
-          const courseId = node.id();
-          const coreInfo = coreClasses[courseId];
-          console.log(`${courseId}: ${node.data('title')} (Core prerequisite - appears ${coreInfo.count} times)`);
-        } else {
-          console.log(`${node.data('label')}: ${node.data('title')}`);
+        // Create tooltip element
+        const tooltip = document.createElement('div');
+        tooltip.className = 'cy-tooltip';
+        
+        let tooltipContent = `<strong>${node.data('label') || node.data('originalId')}</strong>: ${node.data('title')}`;
+        
+        if (node.hasClass('core-class')) {
+          tooltipContent += '<br><em>Click to view prerequisite tree</em>';
         }
+        
+        tooltip.innerHTML = tooltipContent;
+        document.body.appendChild(tooltip);
+        
+        // Position tooltip near cursor
+        const updatePosition = (e) => {
+          tooltip.style.left = `${e.originalEvent.pageX + 15}px`;
+          tooltip.style.top = `${e.originalEvent.pageY + 15}px`;
+        };
+        
+        updatePosition(e);
+        
+        // Update position when cursor moves
+        node.on('mousemove', updatePosition);
+        
+        // Remove tooltip on mouseout
+        node.one('mouseout', () => {
+          tooltip.remove();
+          node.off('mousemove', updatePosition);
+        });
       }
     });
   };
 
+  // Render core class tree popup
+  const renderCoreTree = (coreClass) => {
+    if (!coreClass) return;
+    
+    const elements = buildCoreClassTree(coreClass);
+    
+    if (elements.length === 0) return;
+    
+    if (cyInstances.current.coreTree) {
+      cyInstances.current.coreTree.destroy();
+    }
+    
+    cyInstances.current.coreTree = Cytoscape({
+      container: coreTreeContainerRef.current,
+      elements: elements,
+      style: [
+        {
+          selector: 'node',
+          style: {
+            'label': 'data(label)',
+            'text-valign': 'center',
+            'text-halign': 'center',
+            'background-color': 'data(color)',
+            'color': '#333',
+            'font-size': '12px',
+            'width': '120px',
+            'height': '40px',
+            'shape': 'rectangle',
+            'border-width': '1px',
+            'border-color': '#666',
+            'text-wrap': 'wrap',
+            'text-max-width': '110px',
+            'text-overflow-wrap': 'ellipsis',
+            'padding': '5px'
+          }
+        },
+        {
+          selector: 'node.core-root',
+          style: {
+            'border-width': '3px',
+            'border-color': '#333',
+            'font-weight': 'bold'
+          }
+        },
+        {
+          selector: '.or-group',
+          style: {
+            'background-color': 'data(color)',
+            'background-opacity': 0.5,
+            'border-width': 2,
+            'border-style': 'dashed',
+            'border-color': 'data(borderColor)',
+            'font-weight': 'bold',
+            'color': '#333',
+            'text-valign': 'center',
+            'text-halign': 'center',
+            'shape': 'round-rectangle',
+            'width': '60px',
+            'height': '30px',
+            'padding': '5px'
+          }
+        },
+        {
+          selector: '.and-group',
+          style: {
+            'background-color': 'data(color)',
+            'background-opacity': 0.5,
+            'border-width': 2,
+            'border-style': 'solid',
+            'border-color': 'data(borderColor)',
+            'font-weight': 'bold',
+            'color': '#333',
+            'text-valign': 'center',
+            'text-halign': 'center',
+            'shape': 'round-rectangle',
+            'width': '60px',
+            'height': '30px',
+            'padding': '5px'
+          }
+        },
+        {
+          selector: '.external-prereq',
+          style: {
+            'background-color': '#767676',
+            'border-width': 0,
+            'color': 'white'
+          }
+        },
+        {
+          selector: 'edge',
+          style: {
+            'width': 2,
+            'line-color': '#999',
+            'target-arrow-color': '#999',
+            'target-arrow-shape': 'triangle',
+            'curve-style': 'bezier'
+          }
+        }
+      ],
+      layout: {
+        name: 'dagre',
+        rankDir: 'BT',
+        nodeSep: 60,
+        rankSep: 100,
+        padding: 30
+      }
+    });
+    
+    // Add tooltips for nodes in core tree
+    cyInstances.current.coreTree.on('mouseover', 'node', function(e) {
+      const node = e.target;
+      if (node.data('title')) {
+        // Create tooltip element
+        const tooltip = document.createElement('div');
+        tooltip.className = 'cy-tooltip';
+        tooltip.innerHTML = `<strong>${node.id()}</strong>: ${node.data('title')}`;
+        document.body.appendChild(tooltip);
+        
+        // Position tooltip near cursor
+        const updatePosition = (e) => {
+          tooltip.style.left = `${e.originalEvent.pageX + 15}px`;
+          tooltip.style.top = `${e.originalEvent.pageY + 15}px`;
+        };
+        
+        updatePosition(e);
+        
+        // Update position when cursor moves
+        node.on('mousemove', updatePosition);
+        
+        // Remove tooltip on mouseout
+        node.one('mouseout', () => {
+          tooltip.remove();
+          node.off('mousemove', updatePosition);
+        });
+      }
+    });
+  };
+
+  // Handle search
   const handleSearch = (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
     
     const formattedQuery = searchQuery.trim().toUpperCase();
     setHasSearched(true);
+    setSelectedCoreClass(null); // Reset selected core class
     
-    // Try to find the course in different case formats
+    // Try to find course
     const matchingCourse = Object.keys(courseData).find(
       course => course.toUpperCase() === formattedQuery
     );
     
     if (matchingCourse) {
       setCourseNotFound(false);
-      const elements = buildGraphElements(matchingCourse);
-      renderGraph(elements);
+      const graphData = buildGraphElements(matchingCourse);
+      renderMainGraph(graphData.main);
+      // Store core trees in window for node click events
+      window.coreTrees = graphData.coreTrees;
     } else {
       setCourseNotFound(true);
-      if (cyInstance.current) {
-        cyInstance.current.destroy();
-        cyInstance.current = null;
+      window.coreTrees = [];
+      
+      if (cyInstances.current.main) {
+        cyInstances.current.main.destroy();
+        cyInstances.current.main = null;
+      }
+      
+      if (cyInstances.current.coreTree) {
+        cyInstances.current.coreTree.destroy();
+        cyInstances.current.coreTree = null;
       }
     }
   };
 
-  // New function to re-apply layout
+  // Re-apply layout to improve visualization
   const reorganizeGraph = () => {
-    if (!cyInstance.current) return;
+    if (cyInstances.current.main) {
+      cyInstances.current.main.layout({
+        name: 'fcose',
+        animate: true,
+        randomize: true,
+        padding: 75,
+        nodeDimensionsIncludeLabels: true,
+        idealEdgeLength: 100,
+        nodeRepulsion: 8000,
+        edgeElasticity: 0.45,
+        nestingFactor: 0.1,
+        gravity: 0.25,
+        numIter: 2000,
+        tile: true
+      }).run();
+    }
     
-    cyInstance.current.layout({
-      name: 'fcose',
-      animate: true,
-      randomize: true, // Randomize positions to get a fresh layout
-      padding: 75,
-      nodeDimensionsIncludeLabels: true,
-      idealEdgeLength: 100,
-      nodeRepulsion: 8000,
-      edgeElasticity: 0.45,
-      nestingFactor: 0.1,
-      gravity: 0.25,
-      numIter: 2000,
-      tile: true,
-      tilingPaddingVertical: 10,
-      tilingPaddingHorizontal: 10
-    }).run();
+    if (cyInstances.current.coreTree) {
+      cyInstances.current.coreTree.layout({
+        name: 'dagre',
+        rankDir: 'BT',
+        nodeSep: 60,
+        rankSep: 100,
+        padding: 30,
+        animate: true
+      }).run();
+    }
+  };
+
+  // Close core tree popup
+  const closeCoreTreePopup = () => {
+    setSelectedCoreClass(null);
+    
+    if (cyInstances.current.coreTree) {
+      cyInstances.current.coreTree.destroy();
+      cyInstances.current.coreTree = null;
+    }
   };
 
   const toggleHelpTooltip = () => {
     setIsHelpTooltipVisible(!isHelpTooltipVisible);
   };
+
+  // Effect to render core tree when selected
+  useEffect(() => {
+    if (selectedCoreClass) {
+      renderCoreTree(selectedCoreClass);
+    }
+  }, [selectedCoreClass]);
 
   return (
     <div className="visualizer-page">
@@ -525,8 +1041,10 @@ function Visualizer() {
                 <p>Enter a course code to view its prerequisite tree.</p>
                 <p>The graph shows:</p>
                 <ul>
-                  <li>Direct prerequisites (AND relationships) with solid arrows</li>
+                  <li>Direct prerequisites with solid arrows</li>
                   <li>Alternative options (OR relationships) grouped in dashed boxes</li>
+                  <li>Colored circles represent courses that appear frequently in prerequisites</li>
+                  <li><strong>Click on a colored circle</strong> to view its complete prerequisite tree</li>
                 </ul>
                 <p>Use the "Reorganize" button to refresh the layout if nodes overlap.</p>
               </div>
@@ -535,18 +1053,23 @@ function Visualizer() {
         </div>
       </form>
       
-      {/* Add Core Classes Legend */}
-      {hasSearched && !courseNotFound && Object.keys(coreClasses).length > 0 && (
-        <div className="core-classes-legend">
-          <h3>Core Prerequisites</h3>
-          <div className="legend-items">
-            {Object.entries(coreClasses).map(([courseId, info]) => (
-              <div key={courseId} className="legend-item">
-                <span className="color-dot" style={{ backgroundColor: info.color }}></span>
-                <span className="legend-text">{courseId} ({info.count})</span>
-              </div>
-            ))}
+      {/* Core Tree Popup */}
+      {selectedCoreClass && (
+        <div className="core-tree-popup">
+          <div className="core-tree-header" style={{ backgroundColor: selectedCoreClass.color }}>
+            <h3>{selectedCoreClass.course} Prerequisites</h3>
+            <button 
+              className="close-button" 
+              onClick={closeCoreTreePopup}
+              aria-label="Close"
+            >
+              ×
+            </button>
           </div>
+          <div 
+            ref={coreTreeContainerRef} 
+            className="core-tree-container"
+          />
         </div>
       )}
       
@@ -561,7 +1084,7 @@ function Visualizer() {
       )}
 
       <div 
-        ref={containerRef} 
+        ref={mainContainerRef} 
         className="graph-container"
       />
       
