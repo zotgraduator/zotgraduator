@@ -490,75 +490,70 @@ function Visualizer() {
 
   return (
     <div className="visualizer-page">
-      <div className="search-header">
-        <form onSubmit={handleSearch} className="search-form">
-          <div className="search-container">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Enter course code (e.g., COMPSCI 161)"
-              className="search-input"
-              aria-label="Course search"
-            />
-            <button type="submit" className="search-button">
-              Search
+      <form onSubmit={handleSearch} className="search-form">
+        <div className="search-container">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Enter course code (e.g., COMPSCI 161)"
+            className="search-input"
+            aria-label="Course search"
+          />
+          
+          <button type="submit" className="search-button">
+            Search
+          </button>
+          
+          {hasSearched && !courseNotFound && (
+            <button 
+              type="button" 
+              className="reorganize-button"
+              onClick={reorganizeGraph}
+              aria-label="Reorganize graph"
+            >
+              Reorganize
+            </button>
+          )}
+          
+          <div className="help-container">
+            <button 
+              type="button" 
+              className="help-button" 
+              onClick={toggleHelpTooltip}
+              aria-label="Help"
+            >
+              ?
             </button>
             
-            <div className="help-container">
-              <button 
-                type="button" 
-                className="help-button" 
-                onClick={toggleHelpTooltip}
-                aria-label="Help"
-              >
-                ?
-              </button>
-              
-              {isHelpTooltipVisible && (
-                <div className="help-tooltip">
-                  <p>Enter a course code to view its prerequisite tree.</p>
-                  <p>The graph shows:</p>
-                  <ul>
-                    <li>Direct prerequisites (AND relationships) with solid arrows</li>
-                    <li>Alternative options (OR relationships) grouped in dashed boxes</li>
-                  </ul>
-                  <p>Use the "Reorganize" button to refresh the layout if nodes overlap.</p>
-                </div>
-              )}
-            </div>
-            
-            {hasSearched && !courseNotFound && (
-              <button 
-                type="button" 
-                className="reorganize-button"
-                onClick={reorganizeGraph}
-                aria-label="Reorganize graph"
-              >
-                Reorganize
-              </button>
+            {isHelpTooltipVisible && (
+              <div className="help-tooltip">
+                <p>Enter a course code to view its prerequisite tree.</p>
+                <p>The graph shows:</p>
+                <ul>
+                  <li>Direct prerequisites (AND relationships) with solid arrows</li>
+                  <li>Alternative options (OR relationships) grouped in dashed boxes</li>
+                </ul>
+                <p>Use the "Reorganize" button to refresh the layout if nodes overlap.</p>
+              </div>
             )}
           </div>
-        </form>
-        
-        {hasSearched && courseNotFound && (
-          <div className="not-found-message">
-            <p>
-              Course not found. Please check the course code and try again.
-              <br />
-              Example courses: COMPSCI 161, I&C SCI 46, MATH 2B
-            </p>
-          </div>
-        )}
-      </div>
+        </div>
+      </form>
+      
+      {hasSearched && courseNotFound && (
+        <div className="not-found-message">
+          <p>
+            Course not found. Please check the course code and try again.
+            <br />
+            Example courses: COMPSCI 161, I&C SCI 46, MATH 2B
+          </p>
+        </div>
+      )}
 
       <div 
         ref={containerRef} 
         className="graph-container"
-        style={{ 
-          display: 'block',
-          height: hasSearched && !courseNotFound ? '100%' : '0' 
-        }}
       />
       
       {!hasSearched && (
