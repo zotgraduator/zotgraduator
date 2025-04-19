@@ -9,11 +9,19 @@ import courseData from '../data/course_data_with_logical_prereqs.json';
 Cytoscape.use(COSEBilkent);
 Cytoscape.use(fcose);
 
+// Define a set of distinct colors for core classes
+const CORE_CLASS_COLORS = [
+  '#8dd3c7', '#ffffb3', '#bebada', '#fb8072', '#80b1d3', 
+  '#fdb462', '#b3de69', '#fccde5', '#d9d9d9', '#bc80bd',
+  '#ccebc5', '#ffed6f', '#a6cee3', '#1f78b4', '#b2df8a'
+];
+
 function Visualizer() {
   const [searchQuery, setSearchQuery] = useState('');
   const [courseNotFound, setCourseNotFound] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [isHelpTooltipVisible, setIsHelpTooltipVisible] = useState(false);
+  const [coreClasses, setCoreClasses] = useState({});
   const cyRef = useRef(null);
   const containerRef = useRef(null);
   const cyInstance = useRef(null);
@@ -26,189 +34,207 @@ function Visualizer() {
     }
 
     setCourseNotFound(false);
+    
+    // First pass: count occurrences of each course in the prerequisite tree
+    const classOccurrences = new Map();
     const visited = new Set();
-    const elements = [];
-    const compoundGroups = [];
-    let groupCounter = 0;
-
-    // Recursive function to process prerequisites
-    const processPrereqs = (course, targetId = null) => {
-      if (visited.has(course)) {
-        // If we've already processed this course, just add the edge if needed
-        if (targetId) {
-          elements.push({ 
-            group: 'edges', 
-            data: { 
-              id: `edge-${course}-${targetId}`, 
-              source: course, 
-              target: targetId 
-            } 
-          });
-        }
-        return;
-      }
-
+    
+    // Function to count course occurrences in the prerequisite tree
+    const countCourseOccurrences = (course, visited = new Set()) => {
+      if (visited.has(course)) return;
       visited.add(course);
-
-      // Add course node if it exists in our data
+      
+      // Skip the course itself from being counted
+      if (course !== courseName) {
+        classOccurrences.set(course, (classOccurrences.get(course) || 0) + 1);
+      }
+      
+      const courseInfo = courseData[course];
+      if (!courseInfo || !courseInfo.parsed_prerequisites || courseInfo.parsed_prerequisites === 'N/A') return;
+      
+      const prereqs = courseInfo.parsed_prerequisites;
+      traversePrereqs(prereqs, visited);
+    };
+    
+    // Traverse the prerequisite structure recursively
+    const traversePrereqs = (structure, visited) => {
+      if (typeof structure === 'string') {
+        countCourseOccurrences(structure, new Set([...visited]));
+      } else if (structure.and) {
+        structure.and.forEach(item => {
+          traversePrereqs(item, new Set([...visited]));
+        });
+      } else if (structure.or) {
+        structure.or.forEach(item => {
+          traversePrereqs(item, new Set([...visited]));
+        });
+      }
+    };
+    
+    // Start the counting process from the main course
+    countCourseOccurrences(courseName);
+    
+    // Identify core classes (appearing 2 or more times)
+    const coreClassesMap = {};
+    let colorIndex = 0;
+    
+    classOccurrences.forEach((count, course) => {
+      if (count >= 2) {
+        coreClassesMap[course] = {
+          color: CORE_CLASS_COLORS[colorIndex % CORE_CLASS_COLORS.length],
+          count: count
+        };
+        colorIndex++;
+      }
+    });
+    
+    // Store the core classes for the legend display
+    setCoreClasses(coreClassesMap);
+    
+    // Second pass: build the graph elements
+    visited.clear();
+    const elements = [];
+    const compoundGroups = {};
+    let groupCounter = 0;
+    
+    // Keep track of all dependencies for edge creation
+    const dependencies = new Map();
+    const orGroupDependencies = new Map();
+    
+    // Process prerequisites and build graph
+    const processPrereqs = (course, targetId = null) => {
+      // Add dependency for edge creation
+      if (targetId) {
+        if (!dependencies.has(course)) {
+          dependencies.set(course, []);
+        }
+        dependencies.get(course).push(targetId);
+      }
+      
+      // If we've visited this course, we still add edges but don't recreate nodes
+      if (visited.has(course)) return;
+      
+      visited.add(course);
+      
+      // Add course node
       if (courseData[course]) {
         const courseInfo = courseData[course];
+        const isCore = coreClassesMap[course];
+        
+        // Create node with core class styling if applicable
         elements.push({
           group: 'nodes',
-          data: { 
-            id: course, 
-            label: course,
-            title: courseInfo.title 
-          }
+          data: {
+            id: course,
+            label: isCore ? '' : course, // No label for core classes
+            title: courseInfo.title || course,
+            isCore: isCore ? true : false,
+            coreColor: isCore ? coreClassesMap[course].color : null
+          },
+          classes: isCore ? 'core-class' : ''
         });
-
-        // Add edge if this is called with a target
-        if (targetId) {
-          elements.push({ 
-            group: 'edges', 
-            data: { 
-              id: `edge-${course}-${targetId}`, 
-              source: course, 
-              target: targetId 
-            } 
-          });
-        }
-
-        // Process prerequisites if they exist
+        
+        // Process this course's prerequisites
         const prereqs = courseInfo.parsed_prerequisites;
         if (prereqs && prereqs !== 'N/A') {
           processLogicalStructure(prereqs, course);
         }
       } else if (course !== 'N/A') {
-        // For courses not in our data but referenced as prereqs
+        // For external prerequisites
         elements.push({
           group: 'nodes',
-          data: { 
-            id: course, 
+          data: {
+            id: course,
             label: course,
-            title: "External Prerequisite" 
+            title: "External Prerequisite"
           },
           classes: 'external-prereq'
         });
-
-        // Add edge if needed
-        if (targetId) {
-          elements.push({ 
-            group: 'edges', 
-            data: { 
-              id: `edge-${course}-${targetId}`, 
-              source: course, 
-              target: targetId 
-            } 
-          });
-        }
       }
     };
 
-    // Process AND/OR logical structures
+    // Process logical structures (AND/OR)
     const processLogicalStructure = (structure, targetId) => {
       if (typeof structure === 'string') {
-        // Base case - single course
         processPrereqs(structure, targetId);
       } else if (structure.and) {
-        // AND relationship - direct edges to target
         structure.and.forEach(item => {
           processLogicalStructure(item, targetId);
         });
       } else if (structure.or) {
-        // OR relationship - create compound node
-        const groupId = `or-group-${groupCounter++}`;
+        // Check for existing OR groups with same structure
+        const orComponents = structure.or.map(item => 
+          typeof item === 'string' ? item : JSON.stringify(item)).sort();
+        const groupSignature = orComponents.join('|');
+        let existingGroupId = null;
         
-        // Create compound parent for OR group
-        elements.push({
-          group: 'nodes',
-          data: { 
-            id: groupId, 
-            label: 'OR',
-            isOrGroup: true
-          },
-          classes: 'or-group'
-        });
+        // Find matching OR group
+        for (const [id, signature] of Object.entries(compoundGroups)) {
+          if (signature === groupSignature) {
+            existingGroupId = id;
+            break;
+          }
+        }
         
-        // Connect the OR group to the target
-        elements.push({ 
-          group: 'edges', 
-          data: { 
-            id: `edge-${groupId}-${targetId}`, 
-            source: groupId, 
-            target: targetId 
-          } 
-        });
-
-        // Add each OR option as a child of the compound node
-        structure.or.forEach(item => {
-          if (typeof item === 'string') {
-            // Add the course node if needed
-            if (!visited.has(item)) {
-              if (courseData[item]) {
-                const courseInfo = courseData[item];
-                elements.push({
-                  group: 'nodes',
-                  data: { 
-                    id: item, 
-                    label: item,
-                    title: courseInfo.title,
-                    parent: groupId
-                  }
-                });
-                visited.add(item);
-                
-                // Process this course's prerequisites
-                const prereqs = courseInfo.parsed_prerequisites;
-                if (prereqs && prereqs !== 'N/A') {
-                  processLogicalStructure(prereqs, item);
-                }
-              } else if (item !== 'N/A') {
-                elements.push({
-                  group: 'nodes',
-                  data: { 
-                    id: item, 
-                    label: item,
-                    title: "External Prerequisite",
-                    parent: groupId
-                  },
-                  classes: 'external-prereq'
-                });
-                visited.add(item);
-              }
-            } else {
-              // If already visited, just update parent
+        if (existingGroupId) {
+          // Use existing OR group
+          if (!orGroupDependencies.has(existingGroupId)) {
+            orGroupDependencies.set(existingGroupId, []);
+          }
+          orGroupDependencies.get(existingGroupId).push(targetId);
+        } else {
+          // Create new OR group
+          const groupId = `or-group-${groupCounter++}`;
+          compoundGroups[groupId] = groupSignature;
+          
+          elements.push({
+            group: 'nodes',
+            data: {
+              id: groupId,
+              label: 'OR',
+              isOrGroup: true
+            },
+            classes: 'or-group'
+          });
+          
+          if (!orGroupDependencies.has(groupId)) {
+            orGroupDependencies.set(groupId, []);
+          }
+          orGroupDependencies.get(groupId).push(targetId);
+          
+          // Process OR options
+          structure.or.forEach(item => {
+            if (typeof item === 'string') {
+              processPrereqs(item, null);
+              
+              // Add as child of OR group
               const existingNode = elements.find(ele => ele.data && ele.data.id === item);
               if (existingNode) {
                 existingNode.data.parent = groupId;
               }
+            } else {
+              // Handle nested logical structures
+              const subGroupId = `sub-${groupId}-${elements.length}`;
+              processNestedLogical(item, subGroupId, groupId);
             }
-          } else {
-            // Handle nested logical structures
-            const subGroupId = `sub-${groupId}-${elements.length}`;
-            processNestedLogical(item, subGroupId, groupId);
-          }
-        });
-
-        compoundGroups.push(groupId);
+          });
+        }
       }
     };
-
-    // Handle nested logical structures within OR groups
+    
+    // Handle nested logical structures
     const processNestedLogical = (structure, nodeId, parentId) => {
       if (structure.and) {
-        // Create an AND node inside the OR group
         elements.push({
           group: 'nodes',
-          data: { 
-            id: nodeId, 
+          data: {
+            id: nodeId,
             label: 'AND',
             parent: parentId
           },
           classes: 'and-group'
         });
-
-        // Process AND items
+        
         structure.and.forEach(item => {
           if (typeof item === 'string') {
             processPrereqs(item, nodeId);
@@ -217,18 +243,16 @@ function Visualizer() {
           }
         });
       } else if (structure.or) {
-        // Create an OR node inside the parent
         elements.push({
           group: 'nodes',
-          data: { 
-            id: nodeId, 
+          data: {
+            id: nodeId,
             label: 'OR',
             parent: parentId
           },
           classes: 'or-group'
         });
-
-        // Process OR items
+        
         structure.or.forEach(item => {
           if (typeof item === 'string') {
             processPrereqs(item, nodeId);
@@ -238,9 +262,38 @@ function Visualizer() {
         });
       }
     };
-
+    
     // Start building the graph from the searched course
     processPrereqs(courseName);
+    
+    // Add all edges
+    dependencies.forEach((targets, source) => {
+      targets.forEach(target => {
+        elements.push({
+          group: 'edges',
+          data: {
+            id: `edge-${source}-${target}`,
+            source: source,
+            target: target
+          }
+        });
+      });
+    });
+    
+    // Add OR group edges
+    orGroupDependencies.forEach((targets, groupId) => {
+      targets.forEach(target => {
+        elements.push({
+          group: 'edges',
+          data: {
+            id: `edge-${groupId}-${target}`,
+            source: groupId,
+            target: target
+          }
+        });
+      });
+    });
+    
     return elements;
   };
 
@@ -274,6 +327,18 @@ function Visualizer() {
             'text-max-width': '110px',
             'text-overflow-wrap': 'ellipsis',
             'padding': '5px'
+          }
+        },
+        {
+          selector: 'node.core-class',
+          style: {
+            'background-color': 'data(coreColor)',
+            'width': '40px',
+            'height': '40px',
+            'shape': 'ellipse',
+            'border-width': '2px',
+            'border-color': '#444',
+            'padding': '2px'
           }
         },
         {
@@ -350,12 +415,18 @@ function Visualizer() {
       }
     });
     
-    // Add tooltips (would be implemented with a tooltip library in a real app)
+    // Add tooltips for nodes
     cyInstance.current.on('mouseover', 'node', function(e) {
       const node = e.target;
       if (node.data('title')) {
-        // This would show a tooltip in a real app
-        console.log(`${node.data('label')}: ${node.data('title')}`);
+        // Show additional info for core classes
+        if (node.data('isCore')) {
+          const courseId = node.id();
+          const coreInfo = coreClasses[courseId];
+          console.log(`${courseId}: ${node.data('title')} (Core prerequisite - appears ${coreInfo.count} times)`);
+        } else {
+          console.log(`${node.data('label')}: ${node.data('title')}`);
+        }
       }
     });
   };
@@ -463,6 +534,21 @@ function Visualizer() {
           </div>
         </div>
       </form>
+      
+      {/* Add Core Classes Legend */}
+      {hasSearched && !courseNotFound && Object.keys(coreClasses).length > 0 && (
+        <div className="core-classes-legend">
+          <h3>Core Prerequisites</h3>
+          <div className="legend-items">
+            {Object.entries(coreClasses).map(([courseId, info]) => (
+              <div key={courseId} className="legend-item">
+                <span className="color-dot" style={{ backgroundColor: info.color }}></span>
+                <span className="legend-text">{courseId} ({info.count})</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       {hasSearched && courseNotFound && (
         <div className="not-found-message">
