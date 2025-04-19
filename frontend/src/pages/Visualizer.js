@@ -198,9 +198,10 @@ function Visualizer() {
             label: isCoreClass ? '' : course, // No label for core classes
             title: courseInfo.title || course,
             isCore: isCoreClass,
-            coreColor: isCoreClass ? coreCoursesWithColors.get(course).color : null
+            coreColor: isCoreClass ? coreCoursesWithColors.get(course).color : null,
+            isMainCourse: isMainCourse
           },
-          classes: isCoreClass ? 'core-class' : ''
+          classes: isCoreClass ? 'core-class' : isMainCourse ? 'main-course' : ''
         });
         
         // For non-core classes or the main course, process their prerequisites
@@ -637,6 +638,18 @@ function Visualizer() {
           }
         },
         {
+          selector: 'node.main-course',
+          style: {
+            'background-color': '#ffbf00', // UCI gold color
+            'color': '#1d2434',            // Dark text for contrast
+            'border-width': '3px',
+            'border-color': '#e0a800',     // Darker gold for border
+            'font-weight': 'bold',
+            'font-size': '14px',           // Slightly larger font
+            'z-index': 10                  // Ensure it's above other nodes
+          }
+        },
+        {
           selector: 'node.core-class',
           style: {
             'background-color': 'data(coreColor)',
@@ -930,6 +943,20 @@ function Visualizer() {
       renderMainGraph(graphData.main);
       // Store core trees in window for node click events
       window.coreTrees = graphData.coreTrees;
+      
+      // Center view on the main course node after the layout is done
+      setTimeout(() => {
+        if (cyInstances.current.main) {
+          const mainNode = cyInstances.current.main.$('node.main-course');
+          if (mainNode.length) {
+            cyInstances.current.main.center(mainNode);
+            cyInstances.current.main.zoom({
+              level: 1.2,
+              position: mainNode.position()
+            });
+          }
+        }
+      }, 500); // Give layout time to run
     } else {
       setCourseNotFound(true);
       window.coreTrees = [];
