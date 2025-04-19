@@ -354,7 +354,11 @@ function Visualizer() {
             'height': '40px',
             'shape': 'rectangle',
             'border-width': '1px',
-            'border-color': '#666'
+            'border-color': '#666',
+            'text-wrap': 'wrap',
+            'text-max-width': '110px',
+            'text-overflow-wrap': 'ellipsis',
+            'padding': '5px'
           }
         },
         {
@@ -381,7 +385,9 @@ function Visualizer() {
             'text-halign': 'center',
             'text-margin-y': 10,
             'shape': 'round-rectangle',
-            'padding': '15px'
+            'padding': '15px',
+            'text-wrap': 'wrap',
+            'text-max-width': '80px'
           }
         },
         {
@@ -398,7 +404,9 @@ function Visualizer() {
             'text-halign': 'center',
             'text-margin-y': 10,
             'shape': 'round-rectangle',
-            'padding': '15px'
+            'padding': '15px',
+            'text-wrap': 'wrap',
+            'text-max-width': '80px'
           }
         },
         {
