@@ -1,13 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Cytoscape from 'cytoscape';
-import COSEBilkent from 'cytoscape-cose-bilkent';
 import fcose from 'cytoscape-fcose';
 import dagre from 'cytoscape-dagre';
 import '../styles/Visualizer.css';
 import courseData from '../data/course_data_with_logical_prereqs.json';
 
 // Register the layouts with Cytoscape
-Cytoscape.use(COSEBilkent);
 Cytoscape.use(fcose);
 Cytoscape.use(dagre);
 
