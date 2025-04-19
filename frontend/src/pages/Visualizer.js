@@ -167,6 +167,9 @@ function Visualizer() {
     const dependencies = new Map();
     const orGroupDependencies = new Map();
     
+    // NEW: Keep track of core class nodes to avoid duplicates
+    const coreClassUsage = new Map(); // Maps a tuple of (core class, target class) to the node ID
+    
     // Process prerequisites and build graph
     const processPrereqs = (course, targetId = null, isMainCourse = false) => {
       // Add dependency for edge creation
@@ -177,9 +180,28 @@ function Visualizer() {
         dependencies.get(course).push(targetId);
       }
       
-      // For core classes, we create a new node instance each time
+      // For core classes, we need to check if we already have a node for this target
       const isCoreClass = coreCoursesWithColors.has(course) && !isMainCourse;
-      const nodeId = isCoreClass ? `${course}-${Math.random().toString(36).substring(7)}` : course;
+      
+      let nodeId;
+      if (isCoreClass) {
+        // Create a key using the core course and the target it points to
+        const usageKey = `${course}->${targetId}`;
+        
+        // Check if we already have this core class pointing to this target
+        if (coreClassUsage.has(usageKey)) {
+          // Reuse existing node
+          nodeId = coreClassUsage.get(usageKey);
+          return; // Skip creating a new node since we already have one
+        } else {
+          // Create new node with unique ID
+          nodeId = `${course}-${Math.random().toString(36).substring(7)}`;
+          // Store for future reference
+          coreClassUsage.set(usageKey, nodeId);
+        }
+      } else {
+        nodeId = course;
+      }
       
       // Skip if we've already processed this non-core course
       if (!isCoreClass && visited.has(course)) return;
