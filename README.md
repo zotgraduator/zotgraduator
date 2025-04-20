@@ -4,12 +4,12 @@
 Ruby on Rails Backend Setup with PostgreSQL
 I'll guide you through setting up a Ruby on Rails backend with PostgreSQL. Let's break this down into manageable steps.
 
-Step 1: Create a new Rails application with PostgreSQL
+<!-- Step 1: Create a new Rails application with PostgreSQL
 First, let's create a new Rails application configured to use PostgreSQL:
 ```
 cd /workspaces/backend
 rails new . --database=postgresql --api
-```
+``` -->
 
 ...
 
@@ -48,7 +48,10 @@ Run: bundle install (to install all gems including rack-cors)
 Run: rails db:create db:migrate (to set up your database)
 Starting the Rails Server:
 
-Run: rails server -p 3001 -b 0.0.0.0
+Run: 
+```
+rails server -p 3001 -b 0.0.0.0
+```
 The -b 0.0.0.0 option is important for proper container networking
 Testing the API:
 

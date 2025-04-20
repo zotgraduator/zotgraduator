@@ -36,7 +36,7 @@ function AboutUs() {
     },
     {
       id: 4,
-      name: 'Sierra M',
+      name: 'SIERRA M',
       image: sierra,
       role: 'Backend Developer',
       description: 'Expert in database design and optimization algorithms.',

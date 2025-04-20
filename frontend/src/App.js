@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import './App.css';
 import './styles/Account.css';
 import './styles/AboutUs.css';
@@ -11,6 +11,8 @@ import TermsAndConditions from './pages/TermsAndConditions';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import AboutUs from './pages/AboutUs';
 import logo from './logo.png';
+import Login from './pages/Login';
+import SignUpPage from './pages/SignUp';
 
 function App() {
   return (
@@ -28,6 +30,8 @@ function App() {
       <main>
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUpPage />} />
           <Route path="/optimizer" element={<Optimizer />} />
           <Route path="/social" element={<Social />} />
           <Route path="/account" element={<Account />} />
@@ -46,12 +50,14 @@ function App() {
 }
 
 function Dashboard() {
+  const navigate = useNavigate();
+
   return (
     <div className="Dashboard">
       <section className="hero-section">
         <h1>ZOTGRADUATOR</h1>
         <p className="Tagline">Your path to graduation, simplified.</p>
-        <button className="cta-button">Get Started</button>
+        <button className="cta-button" onClick={() => navigate('/login')}>Get Started</button>
       </section>
 
       <section className="mission-section">
