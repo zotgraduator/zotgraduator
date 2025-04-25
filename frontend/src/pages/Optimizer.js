@@ -8,7 +8,7 @@ function Optimizer() {
   const sidebarRef = useRef(null);
   
   // State for sidebar configurations
-  const [majorOptions] = useState(['Software Engineering', 'Computer Science', 'Informatics', 'Data Science', 'Business Information Management', 'Computer Game Science']);
+  const [majorOptions] = useState(['Software Engineering', 'Computer Science', 'Informatics', 'Data Science']);
   const [major, setMajor] = useState('Software Engineering');
   
   const [startYear, setStartYear] = useState(currentYear);
