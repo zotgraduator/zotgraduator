@@ -1,83 +1,141 @@
-# ZOTGRADUATOR
+<div align="center">
+  <img src="./images/logo.png" alt="Zotgraduator Logo" width="400">
+  <h1>ZOTGRADUATOR</h1>
+  <p><strong>Your path to graduation, simplified.</strong></p>
+</div>
 
-## Back end
-Ruby on Rails Backend Setup with PostgreSQL
-I'll guide you through setting up a Ruby on Rails backend with PostgreSQL. Let's break this down into manageable steps.
+## 📚 About
 
-Step 1: Create a new Rails application with PostgreSQL
-First, let's create a new Rails application configured to use PostgreSQL:
+Zotgraduator is a comprehensive academic planning tool designed specifically for University of California, Irvine students. It helps students navigate their academic journey efficiently by providing course planning, schedule optimization, and visualization tools to ensure they meet all graduation requirements while balancing their interests and career goals.
+
+This project is a continuation and significant improvement of [Course Plan Optimizer](https://github.com/jasperdoan/course_plan_optimizer), originally created by [Jasper Doan](https://github.com/jasperdoan). The original tool used algorithmic techniques to build optimal academic schedules, and has now evolved into a full-featured web application with enhanced capabilities and user experience.
+
+## 🚀 Features
+
+### Course Visualization
+Explore course prerequisites through an interactive, directed graph visualization. Understand the complex relationships between courses and identify core prerequisite chains that are crucial for your academic planning.
+
+<div align="center">
+  <img src="./images/visualizer.png" alt="Course Visualization" width="800">
+</div>
+
+### Schedule Optimization
+Generate optimized course schedules based on your major requirements, completed courses, and preferences. Our algorithm creates conflict-free schedules that work with your preferences while ensuring you stay on track for graduation.
+
+<div align="center">
+  <img src="./images/plan.png" alt="Schedule Optimization" width="800">
+</div>
+
+### Additional Features
+- **Academic Planning**: Create and manage multi-year academic plans
+- **Requirement Tracking**: Monitor progress toward degree requirements
+- **User Accounts**: Save and manage multiple schedules and academic plans
+- **Social Features**: Connect with peers and get advice on courses and professors
+- **Mobile-Responsive Design**: Access your plans on any device
+
+## 💻 Tech Stack
+
+- **Frontend**: ReactJS
+  - Component-based architecture for modular UI development
+  - Context API for state management
+  - CSS for styling with responsive design
+- **Backend**: Ruby on Rails
+  - RESTful API design
+  - PostgreSQL database for data storage
+  - Authentication and authorization
+- **Data Processing**:
+  - Graph algorithms for prerequisite visualization
+  - Constraint satisfaction algorithms for schedule optimization
+
+## 🛠️ Installation
+
+### Prerequisites
+- Node.js (v14 or higher)
+- Ruby (v3.0 or higher)
+- Ruby on Rails (v7.0 or higher)
+- PostgreSQL
+
+### Setup
+
+1. Clone the repository
+```bash
+git clone https://github.com/your-organization/zotgraduator.git
+cd zotgraduator
 ```
-cd /workspaces/backend
-rails new . --database=postgresql --api
+
+2. Install frontend dependencies
+```bash
+cd frontend
+npm install
+npm start
 ```
 
-...
-
-Step 7: Start your Docker containers
-Now let's start the Docker containers:
-```
-docker-compose build
-docker-compose up
-```
-This will build and start both your Rails application and PostgreSQL database.
-
-Step 8: Set up the database
-In a new terminal, run:
-```
-docker-compose exec web rails db:create db:migrate
+3. Install backend dependencies
+```bash
+cd ../backend
+bundle install
+rails db:create
+rails db:migrate
+rails db:seed
+rails server
 ```
 
-----------------------
+4. Open your browser and navigate to `http://localhost:3000`
 
+## 📖 How It Works
 
-Docker Container Workflow Instructions
-Since you're using VS Code's devcontainer feature, many of the traditional Docker commands are handled behind the scenes. Here's what you need to know:
+Zotgraduator uses a sophisticated algorithm to:
 
-Rebuilding the Container (if needed):
+1. **Analyze Prerequisites**: We create directed acyclic graphs of course prerequisites to ensure logical course sequencing.
 
-Click on the green button in the bottom-left corner of VS Code
-Select "Rebuild Container" to rebuild with any configuration changes
-Starting the Container:
+2. **Apply Constraints**: The system takes into account:
+   - Major requirements
+   - Course availability by quarter/semester
+   - Prerequisites and corequisites
+   - Maximum unit load preferences
+   - Previously completed courses
 
-The container should already be running if you're in VS Code
-If not, click the green button and select "Reopen in Container"
-Database Setup:
+3. **Optimize Schedules**: Using constraint satisfaction techniques, Zotgraduator generates optimal quarter-by-quarter plans that minimize time to graduation.
 
-Open a terminal in VS Code
-Run: bundle install (to install all gems including rack-cors)
-Run: rails db:create db:migrate (to set up your database)
-Starting the Rails Server:
+4. **Visualize Course Paths**: Interactive visualizations help students understand complex prerequisite chains and make informed decisions about their academic journey.
 
-Run: rails server -p 3001 -b 0.0.0.0
-The -b 0.0.0.0 option is important for proper container networking
-Testing the API:
+## 👥 Contributors
 
-Your API should now be accessible at http://localhost:3001
-You can try visiting http://localhost:3001/health if you have a health check endpoint, or create a simple test endpoint
-Troubleshooting:
+This project was developed by a team of Senior Software Engineering students from the Donald Bren School of Information and Computer Sciences at UC Irvine.
 
-If you can't connect to the database, check your database.yml file
-Ensure the host is set to 'db' as that's the service name in docker-compose
-Check logs with docker logs [container-name] if needed
-Stopping the Server:
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/CakeJamble">
+        <img src="https://github.com/CakeJamble.png" width="100px" alt="Jake C"/>
+        <br />
+        <sub><b>Jake C</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/connor-darling">
+        <img src="https://github.com/connor-darling.png" width="100px" alt="Connor D"/>
+        <br />
+        <sub><b>Connor D</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/jasperdoan">
+        <img src="https://github.com/jasperdoan.png" width="100px" alt="Jasper D"/>
+        <br />
+        <sub><b>Jasper D</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/mcdipples">
+        <img src="https://github.com/mcdipples.png" width="100px" alt="Sierra M"/>
+        <br />
+        <sub><b>Sierra M</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
 
-Use Ctrl+C in the terminal where the server is running
-Viewing Container Logs (if needed from outside VS Code):
+## 📄 License
 
-docker compose logs app or docker compose logs db
-Creating Your First API Endpoint:
-
-Run: rails generate controller api/v1/Health index
-Edit the controller to return a simple JSON response
-Test at http://localhost:3001/api/v1/health
-Remember that in the VS Code devcontainer environment, most Docker operations are abstracted away - the container is automatically built and started for you. You mainly interact with the Rails commands directly in the terminal.
-
-
-
-## Front end
-Once you have this basic setup running, we can proceed to:
-Creating models for your data (courses, users, etc.)
-Setting up authentication
-Building API endpoints
-Connecting to your frontend
-Would you like me to continue with any of these next steps?
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
