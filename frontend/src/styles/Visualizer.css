@@ -1,0 +1,296 @@
+.visualizer-page {
+  background-color: white;
+  height: calc(100vh - 105px); /* Full height minus header */
+  margin-bottom: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Floating search controls */
+.search-form {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  width: 100%;
+  max-width: 800px;
+  padding: 0 20px;
+}
+
+/* Search container and controls */
+.search-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 20px;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 10px 15px;
+  border-radius: 30px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.search-input {
+  flex: 1;
+  height: 38px;
+  padding: 0 15px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  transition: border-color 0.3s;
+  margin-right: 10px;
+  min-width: 250px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.controls-group {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.search-button, 
+.reorganize-button {
+  height: 38px;
+  padding: 0 15px;
+  border-radius: 4px;
+  border: none;
+  background-color: #1d2434;
+  color: white;
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: 600;
+  transition: background-color 0.3s;
+  font-size: 14px;
+  margin-right: 10px;
+}
+
+.search-button:hover, 
+.reorganize-button:hover {
+  background-color: #15192a;
+}
+
+.reorganize-button {
+  background-color: #2a65c9;
+}
+
+.help-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.help-button {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.help-button:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.help-tooltip {
+  position: absolute;
+  right: 0;
+  top: 45px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  z-index: 100;
+  width: 300px;
+  max-width: 90vw;
+  white-space: normal;
+  text-align: left;
+}
+
+.help-tooltip p {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+
+.help-tooltip ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+.help-tooltip li {
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.not-found-message {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+  border-left: 4px solid #ffc107;
+  border-radius: var(--border-radius);
+  color: #856404;
+  max-width: 600px;
+  padding: 10px 15px;
+  text-align: center;
+  z-index: 5;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.graph-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* Core Tree Popup */
+.core-tree-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  width: 80%;
+  max-width: 900px;
+  height: 80%;
+  max-height: 700px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.core-tree-header {
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.core-tree-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.close-button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.core-tree-container {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Tooltip for nodes */
+.cy-tooltip {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 12px;
+  z-index: 1500;
+  pointer-events: none;
+  max-width: 250px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.cy-tooltip strong {
+  color: var(--primary-color);
+}
+
+.cy-tooltip em {
+  font-style: italic;
+  color: #666;
+  font-size: 11px;
+  display: block;
+  margin-top: 4px;
+}
+
+.initial-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--gray-dark);
+  font-size: 1.1rem;
+}
+
+.example-text {
+  color: var(--primary-color);
+  font-size: 0.9rem;
+  margin-top: 15px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .search-container {
+    flex-wrap: wrap;
+  }
+  
+  .search-input {
+    flex-basis: 100%;
+    margin-bottom: 10px;
+  }
+  
+  .search-button, .reorganize-button {
+    flex: 1;
+    margin: 5px;
+  }
+  
+  .help-container {
+    margin-left: 0;
+  }
+
+  .help-tooltip {
+    right: -100px;
+  }
+
+  .not-found-message {
+    top: 130px;
+    width: calc(100% - 40px);
+  }
+
+  .core-tree-popup {
+    width: 95%;
+    height: 90%;
+    max-height: none;
+  }
+}
