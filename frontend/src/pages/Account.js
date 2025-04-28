@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/Account.css';
 
 function Account() {
   const { currentUser, login, signup, logout } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
   const [loginError, setLoginError] = useState('');
   const [signupError, setSignupError] = useState('');
@@ -11,7 +13,7 @@ function Account() {
 
   // Login form state
   const [loginData, setLoginData] = useState({
-    username: '',
+    email: '',
     password: ''
   });
 
@@ -52,7 +54,7 @@ function Account() {
     e.preventDefault();
     try {
       setLoginError('');
-      await login(loginData.username, loginData.password);
+      await login(loginData.email, loginData.password);
       setSuccessMessage('Logged in successfully!');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
@@ -125,12 +127,12 @@ function Account() {
       {loginError && <div className="error-message">{loginError}</div>}
       <form onSubmit={handleLogin}>
         <div className="form-group">
-          <label htmlFor="username">Username</label>
+          <label htmlFor="email">Email</label>
           <input
-            type="text"
-            id="username"
-            name="username"
-            value={loginData.username}
+            type="email"
+            id="email"
+            name="email"
+            value={loginData.email}
             onChange={handleLoginChange}
             required
           />
@@ -156,6 +158,14 @@ function Account() {
         <p>Username: test</p>
         <p>Password: test</p>
       </div>
+      <button
+        type="button"
+        className="secondary-button"
+        style={{ width: '100%', marginTop: '1rem' }}
+        onClick={() => navigate('/optimizer')}
+      >
+        Continue as Guest
+      </button>
     </div>
   );
 
@@ -268,6 +278,14 @@ function Account() {
       <p className="form-footer">
         Already have an account? <button className="text-button" onClick={() => setActiveTab('login')}>Sign In</button>
       </p>
+      <button
+        type="button"
+        className="secondary-button"
+        style={{ width: '100%', marginTop: '1rem' }}
+        onClick={() => navigate('/optimizer')}
+      >
+        Continue as Guest
+      </button>
     </div>
   );
 
