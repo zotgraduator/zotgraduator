@@ -1,5 +1,7 @@
-class Courses < ApplicationRecord
+class Course < ApplicationRecord
   validates :class_name,
   presence: true,
   uniqueness: true
+
+  has_and_belongs_to_many :schedules
 end
