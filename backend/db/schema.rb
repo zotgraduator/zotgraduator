@@ -10,8 +10,49 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 0) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_03_195954) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
+  create_table "accounts", force: :cascade do |t|
+    t.string "account_id"
+    t.string "firstname"
+    t.string "lastname"
+    t.string "email"
+    t.string "major"
+    t.string "year"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "courses", force: :cascade do |t|
+    t.string "class_name"
+    t.string "title"
+    t.string "description"
+    t.integer "units"
+    t.jsonb "parsed_prerequisites"
+    t.string "overlaps_with", default: [], array: true
+    t.string "same_as", default: [], array: true
+    t.string "restriction"
+    t.string "grading_option", default: [], array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["class_name"], name: "index_courses_on_class_name"
+  end
+
+  create_table "courses_schedules", id: false, force: :cascade do |t|
+    t.bigint "course_id", null: false
+    t.bigint "schedule_id", null: false
+    t.index ["course_id"], name: "index_courses_schedules_on_course_id"
+    t.index ["schedule_id"], name: "index_courses_schedules_on_schedule_id"
+  end
+
+  create_table "schedules", force: :cascade do |t|
+    t.string "schedule_id"
+    t.string "term"
+    t.integer "total_units"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["schedule_id"], name: "index_schedules_on_schedule_id", unique: true
+  end
 end
