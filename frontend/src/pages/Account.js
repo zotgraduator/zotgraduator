@@ -14,7 +14,7 @@ function Account() {
   // Login form state
   const [loginData, setLoginData] = useState({
     email: '',
-    password: ''
+    password: '',
   });
 
   // Signup form state
@@ -26,19 +26,35 @@ function Account() {
     firstName: '',
     lastName: '',
     major: '',
-    year: ''
+    year: '',
   });
 
   // Mock saved schedules
   const [savedSchedules, setSavedSchedules] = useState([
-    { id: 1, name: 'Fall 2023', courses: ['COMPSCI 161', 'COMPSCI 171', 'IN4MATX 115'] },
-    { id: 2, name: 'Winter 2024', courses: ['COMPSCI 122A', 'COMPSCI 143A', 'STATS 67'] }
+    {
+      id: 1,
+      name: 'Fall 2023',
+      courses: ['COMPSCI 161', 'COMPSCI 171', 'IN4MATX 115'],
+    },
+    {
+      id: 2,
+      name: 'Winter 2024',
+      courses: ['COMPSCI 122A', 'COMPSCI 143A', 'STATS 67'],
+    },
   ]);
 
   // Mock academic plans
   const [savedPlans, setSavedPlans] = useState([
-    { id: 1, name: 'Four Year Plan', description: 'Complete degree in four years' },
-    { id: 2, name: 'CS Specialization', description: 'Focus on AI and Machine Learning' }
+    {
+      id: 1,
+      name: 'Four Year Plan',
+      description: 'Complete degree in four years',
+    },
+    {
+      id: 2,
+      name: 'CS Specialization',
+      description: 'Focus on AI and Machine Learning',
+    },
   ]);
 
   // User preferences
@@ -46,7 +62,7 @@ function Account() {
     darkMode: false,
     emailNotifications: true,
     showGPA: true,
-    scheduleReminders: true
+    scheduleReminders: true,
   });
 
   // Handle login form submission
@@ -98,25 +114,25 @@ function Account() {
   // Handle form input changes
   const handleLoginChange = (e) => {
     const { name, value } = e.target;
-    setLoginData(prevData => ({
+    setLoginData((prevData) => ({
       ...prevData,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSignupChange = (e) => {
     const { name, value } = e.target;
-    setSignupData(prevData => ({
+    setSignupData((prevData) => ({
       ...prevData,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handlePreferenceChange = (e) => {
     const { name, checked, type, value } = e.target;
-    setPreferences(prevPrefs => ({
+    setPreferences((prevPrefs) => ({
       ...prevPrefs,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
@@ -148,10 +164,15 @@ function Account() {
             required
           />
         </div>
-        <button type="submit" className="primary-button">Sign In</button>
+        <button type="submit" className="primary-button">
+          Sign In
+        </button>
       </form>
       <p className="form-footer">
-        Don't have an account? <button className="text-button" onClick={() => setActiveTab('signup')}>Sign Up</button>
+        Don't have an account?{' '}
+        <button className="text-button" onClick={() => setActiveTab('signup')}>
+          Sign Up
+        </button>
       </p>
       <div className="demo-credentials">
         <p>Demo Credentials:</p>
@@ -273,10 +294,15 @@ function Account() {
             required
           />
         </div>
-        <button type="submit" className="primary-button">Create Account</button>
+        <button type="submit" className="primary-button">
+          Create Account
+        </button>
       </form>
       <p className="form-footer">
-        Already have an account? <button className="text-button" onClick={() => setActiveTab('login')}>Sign In</button>
+        Already have an account?{' '}
+        <button className="text-button" onClick={() => setActiveTab('login')}>
+          Sign In
+        </button>
       </p>
       <button
         type="button"
@@ -296,7 +322,9 @@ function Account() {
       <div className="profile-info">
         <div className="info-group">
           <label>Name</label>
-          <p>{currentUser.firstName} {currentUser.lastName}</p>
+          <p>
+            {currentUser.firstName} {currentUser.lastName}
+          </p>
         </div>
         <div className="info-group">
           <label>Username</label>
@@ -317,7 +345,9 @@ function Account() {
       </div>
       <div className="profile-actions">
         <button className="secondary-button">Edit Profile</button>
-        <button className="danger-button" onClick={handleLogout}>Sign Out</button>
+        <button className="danger-button" onClick={handleLogout}>
+          Sign Out
+        </button>
       </div>
     </div>
   );
@@ -328,7 +358,7 @@ function Account() {
       <h2>Saved Schedules</h2>
       <div className="saved-items-list">
         {savedSchedules.length > 0 ? (
-          savedSchedules.map(schedule => (
+          savedSchedules.map((schedule) => (
             <div key={schedule.id} className="saved-item">
               <div className="saved-item-header">
                 <h3>{schedule.name}</h3>
@@ -338,7 +368,9 @@ function Account() {
                 </div>
               </div>
               <div className="saved-item-details">
-                <p><strong>Courses:</strong> {schedule.courses.join(', ')}</p>
+                <p>
+                  <strong>Courses:</strong> {schedule.courses.join(', ')}
+                </p>
               </div>
             </div>
           ))
@@ -356,7 +388,7 @@ function Account() {
       <h2>Saved Academic Plans</h2>
       <div className="saved-items-list">
         {savedPlans.length > 0 ? (
-          savedPlans.map(plan => (
+          savedPlans.map((plan) => (
             <div key={plan.id} className="saved-item">
               <div className="saved-item-header">
                 <h3>{plan.name}</h3>
@@ -427,15 +459,47 @@ function Account() {
             Schedule Reminders
           </label>
         </div>
-        <button type="button" className="primary-button">Save Preferences</button>
+        <button type="button" className="primary-button">
+          Save Preferences
+        </button>
       </form>
+    </div>
+  );
+
+  // Render shared plans
+  const renderSharedPlans = () => (
+    <div className="shared-plans-section">
+      <h2>Shared Plans</h2>
+      <div className="shared-items-list">
+        {savedSchedules.length > 0 ? (
+          savedSchedules.map((schedule) => (
+            <div key={schedule.id} className="shared-item">
+              <div className="shared-item-header">
+                <h3>{schedule.name}</h3>
+                <div className="shared-item-actions">
+                  <button className="icon-button">✏️</button>
+                  <button className="icon-button">🗑️</button>
+                </div>
+              </div>
+              <div className="shared-item-details">
+                <p>
+                  <strong>Courses:</strong> {schedule.courses.join(', ')}
+                </p>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="empty-state">No shared plans yet.</p>
+        )}
+      </div>
+      <button className="primary-button">Share a New Plan</button>
     </div>
   );
 
   return (
     <div className="account-page">
       <h1 className="page-title">My Account</h1>
-      
+
       {successMessage && (
         <div className="success-message">{successMessage}</div>
       )}
@@ -447,29 +511,45 @@ function Account() {
       ) : (
         <div className="account-container">
           <div className="account-sidebar">
-            <button 
-              className={`sidebar-button ${activeTab === 'profile' ? 'active' : ''}`}
+            <button
+              className={`sidebar-button ${
+                activeTab === 'profile' ? 'active' : ''
+              }`}
               onClick={() => setActiveTab('profile')}
             >
               Profile
             </button>
-            <button 
-              className={`sidebar-button ${activeTab === 'schedules' ? 'active' : ''}`}
+            <button
+              className={`sidebar-button ${
+                activeTab === 'schedules' ? 'active' : ''
+              }`}
               onClick={() => setActiveTab('schedules')}
             >
               Saved Schedules
             </button>
-            <button 
-              className={`sidebar-button ${activeTab === 'plans' ? 'active' : ''}`}
+            <button
+              className={`sidebar-button ${
+                activeTab === 'plans' ? 'active' : ''
+              }`}
               onClick={() => setActiveTab('plans')}
             >
               Academic Plans
             </button>
-            <button 
-              className={`sidebar-button ${activeTab === 'preferences' ? 'active' : ''}`}
+            <button
+              className={`sidebar-button ${
+                activeTab === 'preferences' ? 'active' : ''
+              }`}
               onClick={() => setActiveTab('preferences')}
             >
               Preferences
+            </button>
+            <button
+              className={`sidebar-button ${
+                activeTab === 'shared' ? 'active' : ''
+              }`}
+              onClick={() => setActiveTab('shared')}
+            >
+              Shared Plans
             </button>
           </div>
           <div className="account-content">
@@ -477,6 +557,7 @@ function Account() {
             {activeTab === 'schedules' && renderSchedules()}
             {activeTab === 'plans' && renderPlans()}
             {activeTab === 'preferences' && renderPreferences()}
+            {activeTab === 'shared' && renderSharedPlans()}
           </div>
         </div>
       )}
