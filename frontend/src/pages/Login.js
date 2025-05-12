@@ -1,28 +1,15 @@
-import React, { useState } from 'react';         // handle local component state
-import { useNavigate } from 'react-router-dom';  // for page navigation
-import { useFormik } from 'formik';             // form management
-import { CircularProgress } from '@mui/material';// loading indicator
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useFormik } from 'formik';
+import { CircularProgress } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
-import '../styles/Account.css';                   // reuse Account form styles
+import '../styles/Account.css';
 
-/**
-def Login() -> JSX.Element:
-"""Component that handles user login, with navigation to sign up or optimizer
-
-Args:
-None
-
-Returns:
-React JSX element rendering the login page
-Raises:
-None
-"""
-*/
 function Login() {
-  const navigate = useNavigate();                    // used to navigate between routes
-  const { login } = useAuth();                       // grab the login function from context
-  const [loading, setLoading] = useState(false);     // track loading state
-
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
     
   const formik = useFormik({
     initialValues: {
@@ -30,15 +17,16 @@ function Login() {
       password: ''
     },
     onSubmit: async (values) => {
-      setLoading(true);                                // show spinner while authenticating
+      setLoading(true);
+      setError('');
       try {
-        await login(values.email, values.password); // attempt login
-        navigate('/optimizer');                        // upon success, go to optimizer
+        await login(values.email, values.password);
+        navigate('/optimizer');
       } catch (err) {
-        console.error('login failed', err);           // log error
-        alert('Login error: ' + err.message);         // simple user alert
+        console.error('Login failed:', err);
+        setError(err.message || 'Login failed. Please check your credentials.');
       } finally {
-        setLoading(false);                             // always stop spinner
+        setLoading(false);
       }
     }
   });
@@ -47,6 +35,7 @@ function Login() {
     <div className="auth-container">
       <div className="auth-form">
         <h2>Login</h2>
+        {error && <div className="error-message">{error}</div>}
         <form onSubmit={formik.handleSubmit}>
           <div className="form-group">
             <label htmlFor="email">Email</label>
@@ -72,7 +61,7 @@ function Login() {
             />
           </div>
 
-          <button type="submit" className="primary-button">
+          <button type="submit" className="primary-button" disabled={loading}>
             {loading ? <CircularProgress size={20} /> : 'Login'}
           </button>
         </form>
@@ -101,4 +90,4 @@ function Login() {
   );
 }
 
-export default Login; 
+export default Login;
