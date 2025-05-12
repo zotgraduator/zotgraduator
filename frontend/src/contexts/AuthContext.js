@@ -1,114 +1,98 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import api from '../services/api';
 
-// -----------------------------------------------------------------------------
-// crypto helpers (lines 11-32)
-// async function hashPassword(password) {                                           // hash the pwd
-//   /**
-//   Brief description of function purpose
-//   Args:
-//   password: plain-text password to hash
-//   Returns:
-//   sha-256 hex digest
-//   */
-//   const data = new TextEncoder().encode(password);                                // encode to utf-8
-//   const hashBuffer = await crypto.subtle.digest('SHA-256', data);                 // browser crypto
-//   const hashArray = [...new Uint8Array(hashBuffer)];                              // bytes → array
-//   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');            // bytes → hex
-// }
-
-// function genUserId(hash) {                                                        // quick uid from hash
-//   return hash.slice(0, 16);                                                       // 64-bit hex looks nice
-// }
-
-// ---------- helper section (right after React imports) ----------
-async function hashString(text) {                         // generic sha‑256 helper
-  /** return hex digest of any string */
-  const data = new TextEncoder().encode(text);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return [...new Uint8Array(hashBuffer)].map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-const computeUserId = async (email, password) =>          // email:pwd → uid
-  hashString(`${email}:${password}`);
-// -----------------------------------------------------------------
-
-// Create the auth context
 const AuthContext = createContext();
 
-// Mock user data
-// const mockUser = {
-//   username: 'test',
-//   email: 'test@uci.edu',
-//   firstName: 'Peter',
-//   lastName: 'Anteater',
-//   major: 'Computer Science',
-//   year: 'Senior',
-//   studentId: '12345678',
-// };
+export function useAuth() {
+  return useContext(AuthContext);
+}
 
-// Auth provider component
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // mark ctx ready right after mount (no localStorage anymore)
-  useEffect(() => { setLoading(false); }, []);                                    // line 43
+  // Check if user is logged in on page load
+  useEffect(() => {
+    const loadUser = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await api.get('/api/auth/profile');
+          setCurrentUser(response.data.user);
+        } catch (error) {
+          // If there's an error, just log out the user
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+        }
+      }
+      setLoading(false);
+    };
 
-  // ------------------------- LOGIN ------------------------------------------
-  const login = async (email, password) => {               // email required now
-    const userId = await computeUserId(email, password);   // uid derived
-    const res = await fetch('http://localhost:3001/account/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId })                     // pwd never leaves client
-    });
+    loadUser();
+  }, []);
 
-    if (!res.ok) {                                                               // invalid creds?
-      const msg = await res.text();
-      throw new Error(msg || 'invalid credentials');
+  // Login function
+  const login = async (email, password) => {
+    try {
+      const response = await api.post('/api/auth/login', { email, password });
+      const { user, access_token, refresh_token } = response.data;
+      
+      // Store auth data
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('refreshToken', refresh_token);
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      // Set current user
+      setCurrentUser(user);
+      
+      return user;
+    } catch (error) {
+      console.error('Login error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.error || 'Login failed');
     }
-
-    const user = await res.json();                                               // full user profile
-    setCurrentUser(user);                                                        // keep in‑memory only
-    return user;
   };
 
-  // ------------------------- SIGN-UP ----------------------------------------
+  // Signup function
   const signup = async (userData) => {
-    const userId = await computeUserId(userData.email, userData.password);
-    const newUser = { ...userData, userId };
-    delete newUser.password;                               // drop plain pwd
-
-    setCurrentUser(newUser);                                                     // in‑memory only
-
-    try {                                                                        // POST to backend
-      await fetch('http://localhost:3001/account', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUser)
-      });
-    } catch (err) {
-      console.error('failed to sync user (signup)', err);
+    try {
+      const response = await api.post('/api/auth/register', userData);
+      const { user, access_token, refresh_token } = response.data;
+      
+      // Store auth data
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('refreshToken', refresh_token);
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      // Set current user
+      setCurrentUser(user);
+      
+      return user;
+    } catch (error) {
+      console.error('Signup error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.error || 'Signup failed');
     }
-
-    return newUser;
   };
 
-  // -------------------------- LOGOUT ----------------------------------------
-  const logout = () => {                                                         // wipe session
+  // Logout function
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
     setCurrentUser(null);
   };
 
-  const value = { currentUser, login, signup, logout, loading };
+  const value = {
+    currentUser,
+    login,
+    signup,
+    logout,
+    loading
+  };
 
   return (
     <AuthContext.Provider value={value}>
       {!loading && children}
     </AuthContext.Provider>
   );
-}
-
-// Custom hook for using auth context
-export function useAuth() {
-  return useContext(AuthContext);
 }
