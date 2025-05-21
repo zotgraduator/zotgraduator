@@ -8,6 +8,7 @@ from extensions import db
 from routes.auth_routes import auth_bp
 # Import admin_bp but don't register it in production mode
 from routes.admin_routes import admin_bp
+from routes.course_routes import course_bp
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -20,9 +21,9 @@ def create_app(config_class=Config):
     # Configure CORS properly
     CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000", "supports_credentials": True}})
     # CORS(app, resources={r"/api/*": {"origins": "https://sorts-converted-driven-lobby.trycloudflare.com", "supports_credentials": True}})
-    
-    # Register blueprints - focus on auth for login/signup
+      # Register blueprints - focus on auth for login/signup
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(course_bp, url_prefix='/api/courses')
     
     # Only register admin blueprint in development mode with a secret
     if app.config.get('DEBUG') and os.environ.get('ENABLE_ADMIN') == 'true':
