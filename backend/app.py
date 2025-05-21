@@ -1,13 +1,15 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager
 import os
 
 from config import Config
-from extensions import db
+from extensions import db, jwt
 from routes.auth_routes import auth_bp
 # Import admin_bp but don't register it in production mode
 from routes.admin_routes import admin_bp
+from routes.course_routes import course_bp
+from routes.plan_routes import plan_bp
+from routes.schedule_routes import schedule_bp
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -15,14 +17,17 @@ def create_app(config_class=Config):
     
     # Initialize extensions
     db.init_app(app)
-    jwt = JWTManager(app)
+    jwt.init_app(app)
     
-    # Configure CORS properly
-    CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000", "supports_credentials": True}})
-    # CORS(app, resources={r"/api/*": {"origins": "https://sorts-converted-driven-lobby.trycloudflare.com", "supports_credentials": True}})
+    # Configure CORS for Vercel deployment
+    origins = app.config.get('CORS_ORIGINS', ['https://zotgraduator.vercel.app'])
+    CORS(app, resources={r"/api/*": {"origins": origins, "supports_credentials": True}})
     
-    # Register blueprints - focus on auth for login/signup
+    # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(course_bp, url_prefix='/api/courses')
+    app.register_blueprint(plan_bp, url_prefix='/api/plans')
+    app.register_blueprint(schedule_bp, url_prefix='/api/schedules')
     
     # Only register admin blueprint in development mode with a secret
     if app.config.get('DEBUG') and os.environ.get('ENABLE_ADMIN') == 'true':
@@ -48,7 +53,9 @@ def create_app(config_class=Config):
                       "error": "authorization_required"}), 401
     
     with app.app_context():
-        db.create_all()  # Create database tables if they don't exist
+        # Only create tables if not running on Vercel or if explicitly enabled
+        if not os.environ.get('VERCEL_ENV') or os.environ.get('CREATE_TABLES') == 'true':
+            db.create_all()  # Create database tables if they don't exist
         
     return app
 

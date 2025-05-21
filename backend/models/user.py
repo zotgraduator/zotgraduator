@@ -1,6 +1,7 @@
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from sqlalchemy.orm import relationship
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -12,6 +13,10 @@ class User(db.Model):
     major = db.Column(db.String(64))
     year = db.Column(db.String(16))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    plans = relationship('Plan', backref='user', lazy=True, cascade="all, delete-orphan")
+    schedules = relationship('Schedule', backref='user', lazy=True, cascade="all, delete-orphan")
     
     def __repr__(self):
         return f'<User {self.username}>'
