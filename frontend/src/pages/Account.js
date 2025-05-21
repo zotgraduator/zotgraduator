@@ -29,14 +29,14 @@ function Account() {
     year: ''
   });
 
-  // Mock saved schedules - using _setSavedSchedules to indicate it's defined but not used
-  const [savedSchedules, _setSavedSchedules] = useState([
+  // Mock saved schedules
+  const [savedSchedules, setSavedSchedules] = useState([
     { id: 1, name: 'Fall 2023', courses: ['COMPSCI 161', 'COMPSCI 171', 'IN4MATX 115'] },
     { id: 2, name: 'Winter 2024', courses: ['COMPSCI 122A', 'COMPSCI 143A', 'STATS 67'] }
   ]);
 
-  // Mock academic plans - using _setSavedPlans to indicate it's defined but not used
-  const [savedPlans, _setSavedPlans] = useState([
+  // Mock academic plans
+  const [savedPlans, setSavedPlans] = useState([
     { id: 1, name: 'Four Year Plan', description: 'Complete degree in four years' },
     { id: 2, name: 'CS Specialization', description: 'Focus on AI and Machine Learning' }
   ]);

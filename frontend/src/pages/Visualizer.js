@@ -160,7 +160,7 @@ function Visualizer() {
     // Second pass: Build the main graph with core class abstractions
     visited.clear();
     const elements = [];
-    // Remove unused compoundGroups variable
+    const compoundGroups = {};
     let groupCounter = 0;
     
     // Track dependencies for edge creation
@@ -1043,7 +1043,7 @@ function Visualizer() {
     if (selectedCoreClass) {
       renderCoreTree(selectedCoreClass);
     }
-  }, [selectedCoreClass, renderCoreTree]); // Add renderCoreTree as a dependency
+  }, [selectedCoreClass]);
 
   return (
     <div className="visualizer-page">
