@@ -19,9 +19,9 @@ def create_app(config_class=Config):
     db.init_app(app)
     jwt.init_app(app)
     
-    # Configure CORS properly
-    CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000", "supports_credentials": True}})
-    # CORS(app, resources={r"/api/*": {"origins": "https://sorts-converted-driven-lobby.trycloudflare.com", "supports_credentials": True}})
+    # Configure CORS for Vercel deployment
+    origins = app.config.get('CORS_ORIGINS', ['https://zotgraduator.vercel.app'])
+    CORS(app, resources={r"/api/*": {"origins": origins, "supports_credentials": True}})
     
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -53,7 +53,9 @@ def create_app(config_class=Config):
                       "error": "authorization_required"}), 401
     
     with app.app_context():
-        db.create_all()  # Create database tables if they don't exist
+        # Only create tables if not running on Vercel or if explicitly enabled
+        if not os.environ.get('VERCEL_ENV') or os.environ.get('CREATE_TABLES') == 'true':
+            db.create_all()  # Create database tables if they don't exist
         
     return app
 

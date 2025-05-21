@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// Use environment variable for API URL, or default to relative path for same-domain deployment
+const API_URL = process.env.REACT_APP_API_URL || '';
+
 const api = axios.create({
-  baseURL: 'http://localhost:5000'
+  baseURL: API_URL
 });
 
 // Add interceptor to handle token expiration
@@ -18,8 +21,8 @@ api.interceptors.response.use(
         // Try to refresh the token
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
-          // Make sure to use the correct URL for refresh endpoint
-          const response = await axios.post('http://localhost:5000/api/auth/refresh', { 
+          // Use relative URL for refresh endpoint
+          const response = await axios.post(`${API_URL}/api/auth/refresh`, { 
             refresh_token: refreshToken 
           });
           
