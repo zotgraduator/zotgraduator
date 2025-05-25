@@ -1,5 +1,7 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import api from '../services/api';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL || 'https://zotgraduator-api.vercel.app/api';
 
 const AuthContext = createContext();
 
@@ -10,75 +12,75 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Check if user is logged in on page load
   useEffect(() => {
-    const loadUser = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const response = await api.get('/api/auth/profile');
-          setCurrentUser(response.data.user);
-        } catch (error) {
-          // If there's an error, just log out the user
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('user');
-        }
-      }
+    // Check if user is logged in on app load
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      fetchUserProfile(token);
+    } else {
       setLoading(false);
-    };
-
-    loadUser();
+    }
   }, []);
 
-  // Login function
+  const fetchUserProfile = async (token) => {
+    try {
+      const response = await axios.get(`${API_URL}/auth/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCurrentUser(response.data.user);
+    } catch (err) {
+      console.error('Error fetching user profile:', err);
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const login = async (email, password) => {
     try {
-      const response = await api.post('/api/auth/login', { email, password });
+      const response = await axios.post(`${API_URL}/auth/login`, {
+        email,
+        password
+      });
+      
       const { user, access_token, refresh_token } = response.data;
       
-      // Store auth data
-      localStorage.setItem('token', access_token);
+      localStorage.setItem('accessToken', access_token);
       localStorage.setItem('refreshToken', refresh_token);
-      localStorage.setItem('user', JSON.stringify(user));
       
-      // Set current user
       setCurrentUser(user);
-      
       return user;
-    } catch (error) {
-      console.error('Login error:', error.response?.data || error.message);
-      throw new Error(error.response?.data?.error || 'Login failed');
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err.response?.data?.error || 'Failed to login');
+      throw new Error(err.response?.data?.error || 'Failed to login');
     }
   };
 
-  // Signup function
   const signup = async (userData) => {
     try {
-      const response = await api.post('/api/auth/register', userData);
+      const response = await axios.post(`${API_URL}/auth/register`, userData);
+      
       const { user, access_token, refresh_token } = response.data;
       
-      // Store auth data
-      localStorage.setItem('token', access_token);
+      localStorage.setItem('accessToken', access_token);
       localStorage.setItem('refreshToken', refresh_token);
-      localStorage.setItem('user', JSON.stringify(user));
       
-      // Set current user
       setCurrentUser(user);
-      
       return user;
-    } catch (error) {
-      console.error('Signup error:', error.response?.data || error.message);
-      throw new Error(error.response?.data?.error || 'Signup failed');
+    } catch (err) {
+      console.error('Signup error:', err);
+      setError(err.response?.data?.error || 'Failed to create account');
+      throw new Error(err.response?.data?.error || 'Failed to create account');
     }
   };
 
-  // Logout function
   const logout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
     setCurrentUser(null);
   };
 
@@ -87,12 +89,13 @@ export function AuthProvider({ children }) {
     login,
     signup,
     logout,
-    loading
+    loading,
+    error
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }
