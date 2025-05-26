@@ -103,6 +103,13 @@ const services = {
     delete: (id) => api.delete(`/schedules/${id}`),
     validate: (scheduleData) => api.post('/schedules/validate', scheduleData),
     optimize: (constraints) => api.post('/schedules/optimize', constraints)
+  },
+  
+  // Planner services - new!
+  planner: {
+    generatePlan: (planData) => api.post('/planner/generate', planData),
+    getCourseAvailability: () => api.get('/planner/course-availability'),
+    getCompletedSuggestions: () => api.get('/planner/completed-suggestions')
   }
 };
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/Optimizer.css';
 import SearchableMultiSelect from '../components/SearchableMultiSelect';
+import api from '../api/api';
 
 function Optimizer() {
   const currentYear = new Date().getFullYear();
@@ -15,25 +16,19 @@ function Optimizer() {
   const [plannedYears, setPlannedYears] = useState(4);
   const [maxUnitsPerSemester, setMaxUnitsPerSemester] = useState(16);
   
-  // Updated elective courses options
-  const [electiveOptions] = useState([
-    'CS 141', 'CS 142A', 'CS 142B', 'CS 143A', 'CS 161', 'CS 164', 
-    'CS 165', 'CS 169', 'CS 171', 'CS 172B', 'CS 175', 'CS 178',
-    'INF 121', 'INF 122', 'INF 124', 'INF 131', 'INF 133', 'INF 141',
-    'INF 143', 'INF 151', 'INF 153'
-  ]);
-  const [electiveCourses, setElectiveCourses] = useState(['CS 165', 'CS 145', 'CS 141']);
+  // State for course options from backend
+  const [electiveOptions, setElectiveOptions] = useState([]);
+  const [electiveCourses, setElectiveCourses] = useState([]);
   
-  // Updated completed courses options
-  const [completedOptions] = useState([
-    'ICS 45C', 'ICS 45J', 'ICS 46', 'ICS 6B', 'ICS 6D', 'ICS 6N', 
-    'ICS 33', 'ICS 32', 'ICS 31', 'STATS 67', 'MATH 2A', 'MATH 2B',
-    'WRITING 39A', 'WRITING 39B', 'WRITING 39C'
-  ]);
-  const [completedCourses, setCompletedCourses] = useState(['ICS 6N', 'ICS 32', 'ICS 31']);
+  const [completedOptions, setCompletedOptions] = useState([]);
+  const [completedCourses, setCompletedCourses] = useState([]);
   
   // State for sidebar visibility
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  
+  // State for loading status
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   
   // State for collapsible sections
   const [collapsedSections, setCollapsedSections] = useState({
@@ -48,35 +43,32 @@ function Optimizer() {
   // State for expandable rows in the table
   const [expandedRows, setExpandedRows] = useState({});
 
-  // Mock plans data for the table
-  const plans = [
-    {
-      term: 'Fall 2024',
-      classes: ['INF 43', 'STATS 67', 'ICS 6B', 'CS 122A']
-    },
-    {
-      term: 'Winter 2025',
-      classes: ['ICS 139W', 'ICS 6D', 'INF 101', 'INF 113']
-    },
-    {
-      term: 'Spring 2025',
-      classes: ['CS 142A', 'CS 145', 'CS 132', 'INF 115']
-    },
-    {
-      term: 'Fall 2025',
-      classes: ['INF 151', 'INF 121', 'INF 131', 'CS 143A']
-    },
-    {
-      term: 'Winter 2026',
-      classes: ['CS 161', 'INF 122', 'INF 124', 'INF 191A']
-    }
-  ];
+  // State for the generated plan
+  const [plans, setPlans] = useState([]);
 
-  // Remove the effect for toggle button positioning since it will be fixed
+  // State for sessions/terms
+  const [sessions] = useState(['Fall', 'Winter', 'Spring']);
+  
+  // Fetch course availability and suggestions on component mount
   useEffect(() => {
-    // No need to dynamically update position anymore
-    // We'll just toggle the sidebar collapse state
-  }, [sidebarCollapsed]);
+    const fetchCourseData = async () => {
+      try {
+        // Get course availability
+        const availabilityResponse = await api.planner.getCourseAvailability();
+        const coursesList = Object.keys(availabilityResponse.data.courses);
+        setElectiveOptions(coursesList);
+        
+        // Get completed course suggestions
+        const suggestionsResponse = await api.planner.getCompletedSuggestions();
+        setCompletedOptions(suggestionsResponse.data.suggestions);
+      } catch (err) {
+        console.error('Error fetching course data:', err);
+        setError('Failed to load course data. Please try again later.');
+      }
+    };
+    
+    fetchCourseData();
+  }, []);
 
   // Toggle section collapse state
   const toggleSection = (section) => {
@@ -118,6 +110,62 @@ function Optimizer() {
   // Handle multi-select completed courses change
   const handleCompletedCoursesChange = (selectedOptions) => {
     setCompletedCourses(selectedOptions);
+  };
+
+  // Generate a plan based on current settings
+  const generatePlan = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const planData = {
+        major,
+        startYear,
+        plannedYears,
+        maxUnitsPerSemester,
+        completedCourses,
+        electiveCourses,
+        sessions
+      };
+      
+      const response = await api.planner.generatePlan(planData);
+      
+      // Transform the plan data for the UI
+      const planResult = response.data.plan;
+      const formattedPlans = [];
+      
+      // Sort the terms to ensure proper ordering
+      const sortedTerms = Object.keys(planResult).sort((a, b) => {
+        const seasonA = a.replace(/\d+$/, '');
+        const seasonB = b.replace(/\d+$/, '');
+        const yearA = parseInt(a.match(/\d+$/)[0]);
+        const yearB = parseInt(b.match(/\d+$/)[0]);
+        
+        if (yearA !== yearB) return yearA - yearB;
+        
+        const seasonOrder = { Fall: 0, Winter: 1, Spring: 2, Summer: 3 };
+        return seasonOrder[seasonA] - seasonOrder[seasonB];
+      });
+      
+      // Format each term for the UI
+      sortedTerms.forEach(term => {
+        const season = term.replace(/\d+$/, '');
+        const year = parseInt(term.match(/\d+$/)[0]);
+        const termLabel = `${season} ${startYear + year}`;
+        
+        formattedPlans.push({
+          term: termLabel,
+          classes: planResult[term]
+        });
+      });
+      
+      setPlans(formattedPlans);
+    } catch (err) {
+      console.error('Error generating plan:', err);
+      setError('Failed to generate plan. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Calculate end year based on start year and planned years
@@ -321,6 +369,17 @@ function Optimizer() {
               </div>
             )}
           </div>
+          
+          {/* Generate Plan Button */}
+          <div className="sidebar-section">
+            <button 
+              className="generate-plan-button" 
+              onClick={generatePlan}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Generating...' : 'Generate Plan'}
+            </button>
+          </div>
         </div>
 
         {/* Sidebar Toggle Button - now fixed to left edge */}
@@ -336,19 +395,28 @@ function Optimizer() {
         <div className="main-content" ref={dropdownRef}>
           <div className="main-header">
             <h2>Potential Plans</h2>
-            <p className="subtitle">Additional description if required</p>
+            <p className="subtitle">Your customized academic path</p>
           </div>
+
+          {error && (
+            <div className="error-message">
+              {error}
+            </div>
+          )}
 
           <div className="action-filter-bar">
             <div className="search-filters">
               <div className="search-container">
                 <label>Search</label>
-                <input type="text" placeholder="Name, email, etc..." />
+                <input type="text" placeholder="Course code or name..." />
               </div>
               <div className="attribute-dropdown">
-                <label>Attribute</label>
+                <label>Term</label>
                 <select>
-                  <option>Property</option>
+                  <option value="">All Terms</option>
+                  <option>Fall</option>
+                  <option>Winter</option>
+                  <option>Spring</option>
                 </select>
               </div>
               <button className="filter-button">
@@ -363,95 +431,95 @@ function Optimizer() {
             </div>
           </div>
 
-          <div className="plans-table">
-            <div className="table-header">
-              <div className="cell head-cell">Head</div>
-              <div className="cell">Class 1</div>
-              <div className="cell">Class 2</div>
-              <div className="cell">Class 3</div>
-              <div className="cell">Class 4</div>
+          {isLoading ? (
+            <div className="loading-container">
+              <div className="loading-spinner"></div>
+              <p>Generating your optimal course plan...</p>
             </div>
+          ) : plans.length > 0 ? (
+            <div className="plans-table">
+              <div className="table-header">
+                <div className="cell head-cell">Term</div>
+                <div className="cell">Class 1</div>
+                <div className="cell">Class 2</div>
+                <div className="cell">Class 3</div>
+                <div className="cell">Class 4</div>
+              </div>
 
-            <div className="table-body">
-              {plans.map((plan) => (
-                <React.Fragment key={plan.term}>
-                  <div className="table-row term-row">
-                    <div 
-                      className="cell head-cell clickable" 
-                      onClick={() => toggleRow(plan.term)}
-                    >
-                      <span className={`row-chevron ${expandedRows[plan.term] ? 'up' : 'down'}`}>
-                        {expandedRows[plan.term] ? '▲' : '▼'}
-                      </span>
-                      {plan.term}
-                    </div>
-                    {!expandedRows[plan.term] && plan.classes.map((cls, index) => (
-                      <div key={index} className="cell">{cls}</div>
-                    ))}
-                  </div>
-                  
-                  {expandedRows[plan.term] && (
-                    <div className="expanded-content">
-                      <div className="class-details-row">
-                        {plan.classes.map((cls, index) => (
-                          <div key={index} className="class-detail">
-                            <h4>{cls}</h4>
-                            <p>Units: 4</p>
-                            <p>Professor: Example</p>
-                            <p>Time: MWF 10:00-10:50AM</p>
-                          </div>
-                        ))}
+              <div className="table-body">
+                {plans.map((plan) => (
+                  <React.Fragment key={plan.term}>
+                    <div className="table-row term-row">
+                      <div 
+                        className="cell head-cell clickable" 
+                        onClick={() => toggleRow(plan.term)}
+                      >
+                        <span className={`row-chevron ${expandedRows[plan.term] ? 'up' : 'down'}`}>
+                          {expandedRows[plan.term] ? '▲' : '▼'}
+                        </span>
+                        {plan.term}
                       </div>
-                      
-                      <div className="ai-summary-row">
-                        <div className="ai-summary-header">
-                          <span className="eye-icon"><i className="fas fa-eye"></i></span>
-                          AI Generated Summary
-                        </div>
-                        <div className="ai-summary-content">
-                          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eget felis vitae justo eleifend vulputate. 
-                          Nulla facilisi. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; 
-                          Cras vitae magna vel nisi gravida fringilla.
-                          
-                          <div className="warning-alert">
-                            <div className="alert-icon"><i className="fas fa-exclamation-triangle"></i></div>
-                            <div className="alert-content">
-                              <strong>Rate My Professor</strong>
-                              <p>Courses average to a professor rating below 2.5/5</p>
+                      {!expandedRows[plan.term] && plan.classes.map((cls, index) => (
+                        <div key={index} className="cell">{cls}</div>
+                      ))}
+                      {!expandedRows[plan.term] && Array(4 - plan.classes.length).fill().map((_, index) => (
+                        <div key={`empty-${index}`} className="cell">-</div>
+                      ))}
+                    </div>
+                    
+                    {expandedRows[plan.term] && (
+                      <div className="expanded-content">
+                        <div className="class-details-row">
+                          {plan.classes.map((cls, index) => (
+                            <div key={index} className="class-detail">
+                              <h4>{cls}</h4>
+                              <p>Units: 4</p>
+                              <p>Term: {plan.term}</p>
                             </div>
+                          ))}
+                        </div>
+                        
+                        <div className="ai-summary-row">
+                          <div className="ai-summary-header">
+                            <span className="eye-icon"><i className="fas fa-eye"></i></span>
+                            Term Summary
+                          </div>
+                          <div className="ai-summary-content">
+                            This term includes {plan.classes.length} courses for a total of approximately 
+                            {plan.classes.length * 4} units.
+                            
+                            {plan.classes.length > 3 && (
+                              <div className="warning-alert">
+                                <div className="alert-icon"><i className="fas fa-exclamation-triangle"></i></div>
+                                <div className="alert-content">
+                                  <strong>Heavy Course Load</strong>
+                                  <p>This term has {plan.classes.length} courses which may be challenging.</p>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
 
-            <div className="table-footer">
-              <div className="pagination">
-                <span>Rows per page:</span>
-                <select className="rows-select">
-                  <option>5</option>
-                  <option>10</option>
-                  <option>20</option>
-                </select>
-                <span className="page-info">1-5 of 20</span>
-                <div className="pagination-controls">
-                  <button className="page-button prev">
-                    <i className="fas fa-chevron-left"></i>
-                  </button>
-                  <button className="page-button next">
-                    <i className="fas fa-chevron-right"></i>
-                  </button>
+              <div className="table-footer">
+                <div className="pagination">
+                  <span>Total terms: {plans.length}</span>
+                </div>
+                <div className="footer-actions">
+                  <button className="save-button">SAVE PLAN</button>
+                  <button className="delete-button">RESET</button>
                 </div>
               </div>
-              <div className="footer-actions">
-                <button className="save-button">SAVE</button>
-                <button className="delete-button">DELETE</button>
-              </div>
             </div>
-          </div>
+          ) : (
+            <div className="no-plans-message">
+              <p>Configure your preferences and click "Generate Plan" to see your optimal course schedule.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -781,6 +781,70 @@
   font-size: 0.9rem;
 }
 
+/* New styles for plan generation and loading states */
+.generate-plan-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #0064a4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.generate-plan-button:hover {
+  background-color: #004d7f;
+}
+
+.generate-plan-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+}
+
+.loading-spinner {
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #0064a4;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  border-left: 4px solid #c62828;
+}
+
+.no-plans-message {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+}
+
 /* Responsive Styles - adjust for mobile */
 @media (max-width: 992px) {
   .optimizer-content {

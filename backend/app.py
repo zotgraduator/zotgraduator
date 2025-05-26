@@ -8,6 +8,7 @@ from routes.auth_routes import auth_bp
 from routes.course_routes import course_bp
 from routes.plan_routes import plan_bp
 from routes.schedule_routes import schedule_bp
+from routes.planner_routes import planner_bp
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -25,6 +26,7 @@ def create_app(config_class=Config):
     app.register_blueprint(course_bp, url_prefix='/api/courses')
     app.register_blueprint(plan_bp, url_prefix='/api/plans')
     app.register_blueprint(schedule_bp, url_prefix='/api/schedules')
+    app.register_blueprint(planner_bp, url_prefix='/api/planner')
     
     # Create a route to check if the API is running
     @app.route('/api/health', methods=['GET'])

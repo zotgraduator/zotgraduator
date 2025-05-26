@@ -52,16 +52,37 @@ class CoursePlanner:
 
     def __read_csv_to_dict(self) -> dict:
         df = pd.read_csv(self.data_path)
-        return {
-            row['CoursesID']: 
-                (row['Title'], 
-                 [] if pd.isnull(row['Prerequisites']) else row['Prerequisites'].split('+'), 
-                 row['Units']) 
-            for _, row in df.iterrows()
-            }
+        
+        # Check if we're using the courses_availability.csv format
+        if 'Course' in df.columns and 'Availability' in df.columns:
+            # Initialize a basic course dictionary with default values
+            course_dict = {}
+            for _, row in df.iterrows():
+                course_id = row['Course']
+                # For each course, create a tuple of (title, prerequisites, units)
+                # Using default values since we don't have detailed information
+                course_dict[course_id] = (
+                    course_id,  # Use course ID as title for now
+                    [],  # Empty prerequisites since we don't have that info
+                    4  # Default to 4 units per course
+                )
+            return course_dict
+        elif 'CoursesID' in df.columns:
+            # Original format
+            return {
+                row['CoursesID']: 
+                    (row['Title'], 
+                    [] if pd.isnull(row['Prerequisites']) else row['Prerequisites'].split('+'), 
+                    row['Units']) 
+                for _, row in df.iterrows()
+                }
+        else:
+            raise ValueError("Unsupported CSV format. Expected columns not found.")
 
 
     def __build_pdag(self, course_dict: dict) -> dict:
+        # For courses_availability.csv format, we don't have prerequisites
+        # So we'll create an empty prerequisite list for each course
         return {k: v[1] for k, v in course_dict.items()}
 
 

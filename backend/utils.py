@@ -3,17 +3,15 @@ import streamlit as st
 from typing import Type
 from collections import deque
 from functools import lru_cache
-from src.scraper import scape_read_csv
-from src.planner import CoursePlanner
+from scraper import scape_read_csv
+from planner import CoursePlanner
 
 
 
-@st.cache_data
 def load_availability(path: str) -> dict:
     return scape_read_csv(path)
 
 
-@st.cache_data
 def topological_sort(dag: dict) -> dict:
     @lru_cache(maxsize=10)
     def dfs(course: str) -> None:
@@ -33,7 +31,6 @@ def topological_sort(dag: dict) -> dict:
     return topo_order
 
 
-@st.cache_resource
 def plot_dag(pdag: dict):
     dag = topological_sort(pdag)
     G = nx.Graph()
@@ -62,7 +59,6 @@ def plot_dag(pdag: dict):
     st.pyplot()
 
 
-@st.cache_data
 def update_plot_dag(plan: Type[CoursePlanner]) -> None:
     try:
         pdag = plan.prereq_dag.copy()
