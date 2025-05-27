@@ -1,28 +1,23 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from planner import CoursePlanner
-import pandas as pd
 import os
-import json
-from course_utils import (
-    load_course_prerequisites, 
-    create_prerequisites_dag, 
-    create_forward_dag,
-    short_to_full_course_code,
-    full_to_short_course_code
-)
-from scraper import scape_read_csv
-from models.course import Course
-from extensions import db
+import pandas as pd
+import json # Import the json module
+from planner import CoursePlanner # Assuming CoursePlanner is in the same directory or accessible
+from scraper import scape_read_csv # Assuming scraper.py is accessible
+# models.course and extensions.db might not be needed if this is the only db interaction here
+# from models.course import Course # Import the Course model
+# from extensions import db # Import db instance
 
 planner_bp = Blueprint('planner', __name__)
 
-# Get the directory of the current file (planner_routes.py)
+# Determine the correct path to the CSV file relative to this file
 current_dir = os.path.dirname(os.path.abspath(__file__))
-# Go up one level to the 'backend' directory
-backend_dir = os.path.dirname(current_dir)
-# Construct the path to the CSV file
+backend_dir = os.path.dirname(current_dir) # This should be the 'backend' directory
 CSV_FILE_PATH = os.path.join(backend_dir, 'courses_availability.csv')
+PREREQS_JSON_FILE_PATH = os.path.join(current_dir, 'course_data_with_logical_prereqs.json') # Path to the JSON file
+print(f"[Planner Routes] CSV_FILE_PATH resolved to: {CSV_FILE_PATH}")
+print(f"[Planner Routes] PREREQS_JSON_FILE_PATH resolved to: {PREREQS_JSON_FILE_PATH}")
 
 def parse_availability_csv(csv_path):
     """Parse the courses_availability.csv file into a dictionary"""
@@ -37,8 +32,8 @@ def parse_availability_csv(csv_path):
     return course_dict
 
 @planner_bp.route('/generate', methods=['POST'])
-@jwt_required(optional=True)
-def generate_plan():
+@jwt_required(optional=True) # Allow anonymous access or use JWT if available
+def generate_plan_route():
     """Generate an academic plan based on input parameters"""
     data = request.get_json()
     
@@ -124,49 +119,58 @@ def generate_plan():
 
 @planner_bp.route('/course-availability', methods=['GET'])
 def get_course_availability():
-    """Get a list of all available courses and when they're offered"""
+    print("[Planner Routes] Attempting to get course availability.")
+    if not os.path.exists(CSV_FILE_PATH):
+        print(f"[Planner Routes] Error: CSV file not found at {CSV_FILE_PATH}")
+        return jsonify({"error": "Course availability data not found on server."}), 500
+    
     try:
-        # Ensure the CSV_FILE_PATH is correct and the file exists
-        if not os.path.exists(CSV_FILE_PATH):
-            return jsonify({"error": "Course availability data not found on server."}), 500
-            
         availability_data = scape_read_csv(CSV_FILE_PATH)
+        print(f"[Planner Routes] Course availability data loaded. Number of courses: {len(availability_data)}")
         return jsonify({"courses": availability_data}), 200
     except Exception as e:
-        # Log the error for debugging
-        print(f"Error reading course availability: {e}")
+        print(f"[Planner Routes] Error reading course availability from CSV: {e}")
         return jsonify({"error": "Failed to load course availability"}), 500
 
 @planner_bp.route('/completed-suggestions', methods=['GET'])
 def get_completed_suggestions():
-    """Get suggested courses for the completed courses dropdown"""
+    print("[Planner Routes] Attempting to get completed course suggestions.")
+    if not os.path.exists(CSV_FILE_PATH):
+        print(f"[Planner Routes] Error: CSV file not found at {CSV_FILE_PATH} for suggestions.")
+        return jsonify({"error": "Course data for suggestions not found on server."}), 500
+        
     try:
-        # Ensure the CSV_FILE_PATH is correct and the file exists
-        if not os.path.exists(CSV_FILE_PATH):
-            return jsonify({"error": "Course data for suggestions not found on server."}), 500
-
         df = pd.read_csv(CSV_FILE_PATH)
-        # Assuming the 'Course' column contains the course IDs
         if 'Course' not in df.columns:
+            print("[Planner Routes] Error: 'Course' column missing in CSV for suggestions.")
             return jsonify({"error": "Invalid course data format for suggestions."}), 500
             
         suggestions = df['Course'].tolist()
+        print(f"[Planner Routes] Completed course suggestions loaded. Number of suggestions: {len(suggestions)}")
         return jsonify({"suggestions": suggestions}), 200
     except Exception as e:
-        # Log the error for debugging
-        print(f"Error generating completed course suggestions: {e}")
+        print(f"[Planner Routes] Error generating completed course suggestions from CSV: {e}")
         return jsonify({"error": "Failed to load completed course suggestions"}), 500
 
 @planner_bp.route('/course-prerequisites', methods=['GET'])
 def get_all_course_prerequisites():
-    """Fetch all courses and their parsed prerequisites."""
+    """Fetch all courses and their parsed prerequisites from JSON file."""
+    print("[Planner Routes] Attempting to get all course prerequisites from JSON file.")
+    if not os.path.exists(PREREQS_JSON_FILE_PATH):
+        print(f"[Planner Routes] Error: JSON prerequisites file not found at {PREREQS_JSON_FILE_PATH}")
+        return jsonify({"error": "Course prerequisites data not found on server."}), 500
+    
     try:
-        courses = Course.query.all()
+        with open(PREREQS_JSON_FILE_PATH, 'r') as f:
+            all_course_data = json.load(f)
+        
         prerequisites_map = {
-            course.class_name: course.parsed_prerequisites
-            for course in courses if course.class_name and course.parsed_prerequisites
+            class_name: course_data.get("parsed_prerequisites")
+            for class_name, course_data in all_course_data.items()
+            if course_data.get("parsed_prerequisites") is not None # Ensure there are prereqs
         }
+        print(f"[Planner Routes] Created prerequisites_map from JSON with {len(prerequisites_map)} entries.")
         return jsonify({"prerequisites": prerequisites_map}), 200
     except Exception as e:
-        print(f"Error fetching course prerequisites: {e}") # Log error
+        print(f"[Planner Routes] Error fetching course prerequisites from JSON: {e}") # Log error
         return jsonify({"error": "Failed to load course prerequisites"}), 500
