@@ -45,66 +45,24 @@ def load_course_prerequisites():
     
     return prereqs_dict
 
-# Utility functions for converting course codes between formats
-
 def short_to_full_course_code(short_code):
-    """
-    Convert short course code to full course code
-    Example: CS161 -> COMPSCI 161
-    """
-    # Dictionary mapping department codes to full names
-    dept_map = {
-        "CS": "COMPSCI",
-        "IN4MATX": "IN4MATX",
-        "ICS": "I&C SCI",
-        "INF": "INFORMATICS",
-        "STA": "STATS",
-        "MATH": "MATH"
-    }
-    
-    # Find the department code
-    dept_code = None
-    for code in dept_map.keys():
-        if short_code.startswith(code):
-            dept_code = code
-            break
-    
-    if not dept_code:
+    """Convert a shorthand course code to its full version"""
+    if ' ' not in short_code:
         return short_code
     
-    # Extract the course number
-    course_num = short_code[len(dept_code):]
-    
-    # Return the full code
-    return f"{dept_map[dept_code]} {course_num}"
+    dept, num = short_code.split(' ', 1)
+    if dept in COURSE_CODE_MAPPINGS:
+        return f"{COURSE_CODE_MAPPINGS[dept]} {num}"
+    return short_code
 
 def full_to_short_course_code(full_code):
-    """
-    Convert full course code to short course code
-    Example: COMPSCI 161 -> CS 161
-    """
-    # Dictionary mapping full department names to codes
-    dept_map = {
-        "COMPSCI": "CS",
-        "IN4MATX": "IN4MATX", 
-        "I&C SCI": "ICS",
-        "INFORMATICS": "INF",
-        "STATS": "STA",
-        "MATH": "MATH"
-    }
-    
-    # Split into department and course number
-    parts = full_code.split(' ', 1)
-    if len(parts) < 2:
+    """Convert a full course code to its shorthand version"""
+    if ' ' not in full_code:
         return full_code
     
-    dept, course_num = parts
-    
-    # Map department to short code
-    if dept in dept_map:
-        return f"{dept_map[dept]} {course_num}"
-    
-    # If no match found, return original code
+    dept, num = full_code.split(' ', 1)
+    if dept in REVERSE_MAPPINGS:
+        return f"{REVERSE_MAPPINGS[dept]} {num}"
     return full_code
 
 def extract_direct_prerequisites(prereq_structure):

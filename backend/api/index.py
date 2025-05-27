@@ -9,10 +9,17 @@ sys.path.append(str(backend_dir))
 # Set environment variable to indicate we're running on Vercel
 os.environ['VERCEL'] = '1'
 
-from app import create_app
+# Create a standard WSGI application that Vercel can use
+def application(environ, start_response):
+    # Import within the function to ensure path is set up first
+    from app import create_app
+    
+    # Create Flask app
+    app = create_app()
+    
+    # Let Flask handle the WSGI request
+    return app.wsgi_app(environ, start_response)
 
-# Create Flask app
-app = create_app()
-
-# Vercel uses WSGI handler to serve the app
-handler = app
+# Vercel serverless function handler
+def handler(environ, start_response):
+    return application(environ, start_response)
