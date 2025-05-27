@@ -18,8 +18,14 @@ def create_app(config_class=Config):
     db.init_app(app)
     jwt.init_app(app)
     
-    # Configure CORS for frontend
-    CORS(app, resources={r"/api/*": {"origins": "*", "supports_credentials": True}})
+    # Configure CORS for frontend - update to allow the specific frontend domain
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://zotgraduator.vercel.app')
+    CORS(app, resources={r"/api/*": {
+        "origins": [frontend_url, "http://localhost:3000"],
+        "supports_credentials": True,
+        "allow_headers": ["Content-Type", "Authorization"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    }})
     
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -51,9 +57,10 @@ def create_app(config_class=Config):
     @app.route('/api/preflight', methods=['OPTIONS'])
     def preflight():
         response = jsonify({'status': 'ok'})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', '*')
-        response.headers.add('Access-Control-Allow-Methods', '*')
+        response.headers.add('Access-Control-Allow-Origin', frontend_url)
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
         return response, 200
     
     return app

@@ -29,7 +29,8 @@ class Config:
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     
     # CORS settings - Allow requests from frontend
-    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*').split(',')
+    FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://zotgraduator.vercel.app')
+    CORS_ORIGINS = [FRONTEND_URL, "http://localhost:3000"]
     
     # API URL for frontend to use
-    API_URL = os.environ.get('API_URL') or 'http://localhost:5000/api'
+    API_URL = os.environ.get('API_URL') or 'https://zotgraduator-backend.vercel.app/api'
