@@ -1,4 +1,3 @@
-import networkx as nx
 from typing import Type
 from collections import deque
 from functools import lru_cache
@@ -30,43 +29,43 @@ def topological_sort(dag: dict) -> dict:
     return topo_order
 
 
-def plot_dag(pdag: dict):
-    dag = topological_sort(pdag)
-    G = nx.Graph()
+# def plot_dag(pdag: dict):
+#     dag = topological_sort(pdag)
+#     G = nx.Graph()
 
-    G.add_nodes_from(dag.keys())
-    for n, edges in dag.items():
-        for e in edges:
-            G.add_edge(n, e)
-    layout_options = {'k': .5, 'iterations': 50}
-    pos = nx.spring_layout(G, **layout_options)
+#     G.add_nodes_from(dag.keys())
+#     for n, edges in dag.items():
+#         for e in edges:
+#             G.add_edge(n, e)
+#     layout_options = {'k': .5, 'iterations': 50}
+#     pos = nx.spring_layout(G, **layout_options)
 
-    nx.draw(G, pos, 
-        with_labels=True, 
-        font_size=5.5, 
-        arrows=True, 
-        arrowstyle='->', 
-        arrowsize=12, 
-        node_color=[
-            'lightblue' if node[:2] == 'CS' else 
-            'lightgreen' if node[:3] == 'INF' else 
-            'lightcoral' for node in G.nodes()
-        ],
-        node_size=750
-    )
+#     nx.draw(G, pos, 
+#         with_labels=True, 
+#         font_size=5.5, 
+#         arrows=True, 
+#         arrowstyle='->', 
+#         arrowsize=12, 
+#         node_color=[
+#             'lightblue' if node[:2] == 'CS' else 
+#             'lightgreen' if node[:3] == 'INF' else 
+#             'lightcoral' for node in G.nodes()
+#         ],
+#         node_size=750
+#     )
 
 
-def update_plot_dag(plan: Type[CoursePlanner]) -> None:
-    try:
-        pdag = plan.prereq_dag.copy()
-        for course in plan.completed_courses:
-            pdag.pop(course)
-            for k, v in pdag.items():
-                if course in v:
-                    pdag[k].remove(course)
-        plot_dag(pdag)
-    except:
-        pass
+# def update_plot_dag(plan: Type[CoursePlanner]) -> None:
+#     try:
+#         pdag = plan.prereq_dag.copy()
+#         for course in plan.completed_courses:
+#             pdag.pop(course)
+#             for k, v in pdag.items():
+#                 if course in v:
+#                     pdag[k].remove(course)
+#         plot_dag(pdag)
+#     except:
+#         pass
 
 
 def dag_leveler(dag) -> list:
