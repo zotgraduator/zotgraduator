@@ -3,6 +3,14 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from planner import CoursePlanner
 import pandas as pd
 import os
+import json
+from course_utils import (
+    load_course_prerequisites, 
+    create_prerequisites_dag, 
+    create_forward_dag,
+    short_to_full_course_code,
+    full_to_short_course_code
+)
 
 planner_bp = Blueprint('planner', __name__)
 
@@ -39,13 +47,20 @@ def generate_plan():
     base_dir = os.path.dirname(current_dir)
     csv_path = os.path.join(base_dir, 'courses_availability.csv')
     
-    # Initialize the course planner
+    # Load course prerequisites
+    prereqs_dict = load_course_prerequisites()
+    prereqs_dag = create_prerequisites_dag(prereqs_dict)
+    forward_dag = create_forward_dag(prereqs_dag)
+    
+    # Initialize the course planner with prerequisite information
     planner = CoursePlanner(
         data_path=csv_path,
         planned_years=planned_years,
         max_units_per_sem=max_units_per_sem,
         completed_courses=completed_courses,
-        sessions=sessions
+        sessions=sessions,
+        prereqs_dag=prereqs_dag,
+        forward_dag_input=forward_dag  # Note the renamed parameter
     )
     
     # Load course availability directly
@@ -81,6 +96,9 @@ def generate_plan():
     for term, courses in planner.schedule.items():
         if courses:  # Only include terms with courses
             plan_result[term] = courses
+
+    # display_schedule
+    planner.display_schedule()
     
     # Add additional metadata about the plan
     result = {
@@ -110,6 +128,14 @@ def get_course_availability():
     availability = parse_availability_csv(csv_path)
     
     return jsonify({"courses": availability}), 200
+
+@planner_bp.route('/course-prereqs', methods=['GET'])
+def get_course_prereqs():
+    """Get a list of course prerequisites"""
+    prereqs_dict = load_course_prerequisites()
+    prereqs_dag = create_prerequisites_dag(prereqs_dict)
+    
+    return jsonify({"prerequisites": prereqs_dag}), 200
 
 @planner_bp.route('/completed-suggestions', methods=['GET'])
 def get_completed_suggestions():

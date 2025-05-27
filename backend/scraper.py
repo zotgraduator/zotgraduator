@@ -1,6 +1,7 @@
 import pandas as pd
 from urllib.request import urlopen
 from typing import NamedTuple
+from course_utils import short_to_full_course_code, full_to_short_course_code
 
 
 class UCIScaperIdentifier(NamedTuple):
@@ -74,17 +75,17 @@ def scape_read_csv(file_path: str) -> dict:
 
 
 
-avail_dict = {
-    **scrape_avail_listings(year=2025, department='ALL')
-}
+# avail_dict = {
+#     **scrape_avail_listings(year=2025, department='ALL')
+# }
 
-csv_file_path = 'courses_availability.csv'
-
-
-# Change avail_dict.values() from list to string
-for k, v in avail_dict.items():
-    avail_dict[k] = '+'.join(v)
+# csv_file_path = 'courses_availability.csv'
 
 
-df = pd.DataFrame(avail_dict.items(), columns=['Course', 'Availability'])
-df.to_csv(csv_file_path, index=False)
+# # Change avail_dict.values() from list to string
+# for k, v in avail_dict.items():
+#     avail_dict[k] = '+'.join(v)
+
+
+# df = pd.DataFrame(avail_dict.items(), columns=['Course', 'Availability'])
+# df.to_csv(csv_file_path, index=False)

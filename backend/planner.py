@@ -1,6 +1,6 @@
 import pandas as pd
-from dataclasses import dataclass
-from typing import Callable
+from dataclasses import dataclass, field
+from typing import Callable, Dict, List, Set, Optional
 
 
 @dataclass
@@ -10,12 +10,14 @@ class CoursePlanner:
     max_units_per_sem: int
     completed_courses: list = None
     sessions: list = None
-    _cdict: dict = None
-    _pdag: dict = None
-    _fdag: dict = None
-    _session_val: dict = None
-    _schedule: dict = None
-    _visited: set = None
+    prereqs_dag: Dict[str, List[str]] = None
+    forward_dag_input: Dict[str, List[str]] = None  # Renamed to avoid property conflict
+    _cdict: dict = field(default=None, init=False)
+    _pdag: dict = field(default=None, init=False)
+    _fdag: dict = field(default=None, init=False)
+    _session_val: dict = field(default=None, init=False)
+    _schedule: dict = field(default=None, init=False)
+    _visited: set = field(default=None, init=False)
 
     @property
     def course_dict(self) -> dict:
@@ -35,8 +37,13 @@ class CoursePlanner:
 
     def __post_init__(self) -> None:
         self._cdict = self.__read_csv_to_dict()
-        self._pdag = self.__build_pdag(self._cdict)
-        self._fdag = self.__build_fdag(self._cdict)
+        
+        # Use provided prerequisite DAG if available, otherwise build from course dict
+        self._pdag = self.prereqs_dag if self.prereqs_dag else self.__build_pdag(self._cdict)
+        
+        # Use provided forward DAG if available, otherwise build from prereq DAG
+        self._fdag = self.forward_dag_input if self.forward_dag_input else self.__build_fdag(self._cdict)
+        
         self._session_val = {
             f'{s}{i}': i*len(self.sessions) + idx 
                 for i in range(self.planned_years)
@@ -100,13 +107,17 @@ class CoursePlanner:
         # Base case
         if course in self._visited:
             return
-        self._visited.add(course)
-
-        # Find further node (core course / course with no prereq)
-        if self._pdag[course]:
-            for prereq in self._pdag[course]:
-                if prereq not in self._visited:
+        
+        # Check prerequisites
+        if course in self._pdag:
+            prereqs = self._pdag[course]
+            # First process all prerequisites
+            for prereq in prereqs:
+                if prereq not in self._visited and prereq in courses_avail:
                     self.__build_plan_dfs(prereq, courses_avail)
+        
+        # Mark course as visited
+        self._visited.add(course)
 
         # Lambda functions
         def check_max_units(k: str) -> bool:
@@ -115,7 +126,7 @@ class CoursePlanner:
         
         def get_score(base: int, dag: dict, extrema: Callable[[int, int], int]) -> int:
             score = base
-            for n in dag[course]:
+            for n in dag.get(course, []):
                 for k, v in self._schedule.items():
                     if n in v:
                         score = extrema(score, self._session_val[k])
@@ -125,9 +136,23 @@ class CoursePlanner:
         min_window = get_score(-1, self._pdag, max)
         max_window = get_score(self.planned_years * len(self.sessions), self._fdag, min)
 
+        # Check if all prerequisites are already in the schedule
+        prereqs_met = True
+        for prereq in self._pdag.get(course, []):
+            if prereq not in self._visited:
+                prereqs_met = False
+                break
+        
+        if not prereqs_met:
+            return  # Don't schedule this course if prerequisites aren't met
+        
+        # Try to schedule the course
         for i in range(self.planned_years):
-            for session in courses_avail[course]:
+            for session in courses_avail.get(course, []):
                 k = f'{session}{i}'
+                if k not in self._session_val:
+                    continue  # Skip if term is not in planned sessions
+                
                 score = self._session_val[k]
                 if check_max_units(k) and min_window < score < max_window:
                     self._schedule[k].append(course)
@@ -135,14 +160,19 @@ class CoursePlanner:
     
     
     def fixed_core_course(self, semester: str, courses: list) -> None:
+        if semester not in self._schedule:
+            return  # Skip if semester is not in planned sessions
+        
         self._schedule[f'{semester}'] = courses
         for course in courses:
             self._visited.add(course)
 
 
     def build_plan(self, courses_avail: dict) -> None:
+        # Process all courses that are available
         for k in courses_avail.keys():
-            self.__build_plan_dfs(k, courses_avail)
+            if k in self._cdict:  # Only process courses that exist in our dictionary
+                self.__build_plan_dfs(k, courses_avail)
                 
                 
     def display_schedule(self) -> None:

@@ -49,7 +49,10 @@ function Optimizer() {
   // State for sessions/terms
   const [sessions] = useState(['Fall', 'Winter', 'Spring']);
   
-  // Fetch course availability and suggestions on component mount
+  // Add state for course prerequisites
+  const [coursePrereqs, setCoursePrereqs] = useState({});
+
+  // Fetch course availability, prerequisites, and suggestions on component mount
   useEffect(() => {
     const fetchCourseData = async () => {
       try {
@@ -57,6 +60,10 @@ function Optimizer() {
         const availabilityResponse = await api.planner.getCourseAvailability();
         const coursesList = Object.keys(availabilityResponse.data.courses);
         setElectiveOptions(coursesList);
+        
+        // Get course prerequisites
+        const prereqsResponse = await api.planner.getCoursePrereqs();
+        setCoursePrereqs(prereqsResponse.data.prerequisites);
         
         // Get completed course suggestions
         const suggestionsResponse = await api.planner.getCompletedSuggestions();
@@ -155,6 +162,7 @@ function Optimizer() {
         
         formattedPlans.push({
           term: termLabel,
+          termKey: term,
           classes: planResult[term]
         });
       });
@@ -166,6 +174,11 @@ function Optimizer() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper function to get prerequisites for a course
+  const getPrerequisitesForCourse = (courseId) => {
+    return coursePrereqs[courseId] || [];
   };
 
   // Calculate end year based on start year and planned years
@@ -475,6 +488,16 @@ function Optimizer() {
                               <h4>{cls}</h4>
                               <p>Units: 4</p>
                               <p>Term: {plan.term}</p>
+                              {getPrerequisitesForCourse(cls).length > 0 && (
+                                <div className="prerequisites">
+                                  <p><strong>Prerequisites:</strong></p>
+                                  <ul>
+                                    {getPrerequisitesForCourse(cls).map((prereq, i) => (
+                                      <li key={i}>{prereq}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
