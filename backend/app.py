@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 import os
+import tempfile
 
 from config import Config
 from extensions import db, jwt
@@ -13,6 +14,11 @@ from routes.planner_routes import planner_bp
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+    
+    # For Vercel serverless environment, configure SQLAlchemy to use a writable temp dir
+    if os.environ.get('VERCEL'):
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        app.instance_path = tempfile.gettempdir()
     
     # Initialize extensions
     db.init_app(app)

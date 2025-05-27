@@ -6,6 +6,9 @@ from pathlib import Path
 backend_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(backend_dir))
 
+# Set environment variable to indicate we're running on Vercel
+os.environ['VERCEL'] = '1'
+
 from app import create_app
 
 # Create Flask app
