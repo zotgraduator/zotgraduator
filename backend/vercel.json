@@ -2,20 +2,18 @@
   "version": 2,
   "builds": [
     {
-      "src": "run.py",
+      "src": "api/index.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/run.py"
+      "dest": "api/index.py"
     }
   ],
   "env": {
     "FLASK_ENV": "production",
-    "FRONTEND_URL": "https://zotgraduator.vercel.app",
-    "SUPABASE_URL": "https://lgsoszwnwkewajctxsud.supabase.co",
-    "CORS_ORIGINS": "*"
+    "FRONTEND_URL": "https://zotgraduator.vercel.app"
   }
 }

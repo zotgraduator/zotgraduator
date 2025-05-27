@@ -1,150 +1,115 @@
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from planner import CoursePlanner
-import pandas as pd
 import os
 import json
-from course_utils import (
-    load_course_prerequisites, 
-    create_prerequisites_dag, 
-    create_forward_dag,
-    short_to_full_course_code,
-    full_to_short_course_code
-)
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from scraper import scape_read_csv
+import pandas as pd
 
 planner_bp = Blueprint('planner', __name__)
 
-def parse_availability_csv(csv_path):
-    """Parse the courses_availability.csv file into a dictionary"""
-    df = pd.read_csv(csv_path)
-    course_dict = {}
-    
-    for _, row in df.iterrows():
-        course_id = row['Course']
-        availability = row['Availability']
-        course_dict[course_id] = availability.split('+') if not pd.isnull(availability) else []
-    
-    return course_dict
-
-@planner_bp.route('/generate', methods=['POST'])
-@jwt_required(optional=True)
-def generate_plan():
-    """Generate an academic plan based on input parameters"""
-    data = request.get_json()
-    
-    # Extract parameters from request
-    major = data.get('major', 'Software Engineering')
-    start_year = data.get('startYear', 2023)
-    planned_years = data.get('plannedYears', 4)
-    max_units_per_sem = data.get('maxUnitsPerSemester', 16)
-    completed_courses = data.get('completedCourses', [])
-    elective_courses = data.get('electiveCourses', [])
-    sessions = data.get('sessions', ['Fall', 'Winter', 'Spring'])
-    fixed_courses = data.get('fixedCourses', {})
-    
-    # Get the path to the CSV file
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    base_dir = os.path.dirname(current_dir)
-    csv_path = os.path.join(base_dir, 'courses_availability.csv')
-    
-    # Load course prerequisites
-    prereqs_dict = load_course_prerequisites()
-    prereqs_dag = create_prerequisites_dag(prereqs_dict)
-    forward_dag = create_forward_dag(prereqs_dag)
-    
-    # Initialize the course planner with prerequisite information
-    planner = CoursePlanner(
-        data_path=csv_path,
-        planned_years=planned_years,
-        max_units_per_sem=max_units_per_sem,
-        completed_courses=completed_courses,
-        sessions=sessions,
-        prereqs_dag=prereqs_dag,
-        forward_dag_input=forward_dag  # Note the renamed parameter
-    )
-    
-    # Load course availability directly
-    availability_dict = parse_availability_csv(csv_path)
-    
-    # Filter courses based on availability and electives
-    courses_avail = {}
-    
-    if elective_courses:
-        # If electives are specified, use only those
-        for course in elective_courses:
-            if course in availability_dict:
-                courses_avail[course] = availability_dict[course]
-    else:
-        # If no electives specified, use all available courses except completed ones
-        for course, terms in availability_dict.items():
-            if course not in completed_courses:
-                courses_avail[course] = terms
-    
-    # Add fixed courses to the plan
-    if fixed_courses:
-        for term, courses in fixed_courses.items():
-            planner.fixed_core_course(term, courses)
-    
-    # Sort courses by availability (courses with fewer available terms first)
-    courses_avail = {k: v for k, v in sorted(courses_avail.items(), key=lambda item: len(item[1]))}
-    
-    # Generate the plan
-    planner.build_plan(courses_avail)
-    
-    # Format the result for the frontend
-    plan_result = {}
-    for term, courses in planner.schedule.items():
-        if courses:  # Only include terms with courses
-            plan_result[term] = courses
-
-    # display_schedule
-    planner.display_schedule()
-    
-    # Add additional metadata about the plan
-    result = {
-        "success": True,
-        "plan": plan_result,
-        "metadata": {
-            "major": major,
-            "startYear": start_year,
-            "plannedYears": planned_years,
-            "maxUnitsPerSemester": max_units_per_sem,
-            "sessions": sessions,
-            "completedCourses": completed_courses,
-            "electiveCourses": elective_courses
-        }
-    }
-    
-    return jsonify(result), 200
-
 @planner_bp.route('/course-availability', methods=['GET'])
 def get_course_availability():
-    """Get a list of all available courses and when they're offered"""
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    base_dir = os.path.dirname(current_dir)
-    csv_path = os.path.join(base_dir, 'courses_availability.csv')
-    
-    # Parse the CSV directly
-    availability = parse_availability_csv(csv_path)
-    
-    return jsonify({"courses": availability}), 200
+    """Get course availability data"""
+    try:
+        # Determine the path to the CSV file
+        csv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
+                               'courses_availability.csv')
+        
+        # For Vercel deployment, use the data directly if file not found
+        if not os.path.exists(csv_path):
+            # Read the file included in the deployment
+            df = pd.read_csv('courses_availability.csv')
+            course_availability = {}
+            for _, row in df.iterrows():
+                course_id = row['Course']
+                availability = row['Availability']
+                course_availability[course_id] = [] if pd.isnull(availability) else availability.split('+')
+        else:
+            # Use the scraper function for local development
+            course_availability = scape_read_csv(csv_path)
+        
+        return jsonify({
+            "courses": course_availability
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @planner_bp.route('/course-prereqs', methods=['GET'])
 def get_course_prereqs():
-    """Get a list of course prerequisites"""
-    prereqs_dict = load_course_prerequisites()
-    prereqs_dag = create_prerequisites_dag(prereqs_dict)
+    """Get course prerequisites data"""
+    # For now, return a simplified mock of course prerequisites
+    prereqs = {
+        "CS 161": ["ICS 46", "ICS 6D"],
+        "CS 122A": ["ICS 33"],
+        "INF 43": ["ICS 32"],
+        "ICS 139W": ["ICS 32"]
+    }
     
-    return jsonify({"prerequisites": prereqs_dag}), 200
+    return jsonify({
+        "prerequisites": prereqs
+    }), 200
 
 @planner_bp.route('/completed-suggestions', methods=['GET'])
 def get_completed_suggestions():
     """Get suggested courses for the completed courses dropdown"""
-    # Common lower-division courses students might have completed
+    # Return a list of common courses that students might have completed
     suggestions = [
-        'ICS 45C', 'ICS 45J', 'ICS 46', 'ICS 6B', 'ICS 6D', 'ICS 6N', 
-        'ICS 33', 'ICS 32', 'ICS 31', 'STA 67', 'MATH 2A', 'MATH 2B',
-        'WRITING 39A', 'WRITING 39B', 'WRITING 39C'
+        "ICS 31", "ICS 32", "ICS 33", "ICS 45C", "ICS 45J", "ICS 46", "ICS 51",
+        "ICS 6B", "ICS 6D", "ICS 6N", "MATH 2A", "MATH 2B", "STATS 67"
     ]
     
-    return jsonify({"suggestions": suggestions}), 200
+    return jsonify({
+        "suggestions": suggestions
+    }), 200
+
+@planner_bp.route('/generate', methods=['POST'])
+def generate_plan():
+    """Generate a course plan based on provided parameters"""
+    data = request.get_json()
+    
+    try:
+        # Extract parameters
+        major = data.get('major', 'Computer Science')
+        start_year = data.get('startYear', 2023)
+        planned_years = data.get('plannedYears', 4)
+        max_units = data.get('maxUnitsPerSemester', 16)
+        completed_courses = data.get('completedCourses', [])
+        elective_courses = data.get('electiveCourses', [])
+        sessions = data.get('sessions', ['Fall', 'Winter', 'Spring'])
+        
+        # For demo purposes, return a mock plan
+        mock_plan = {}
+        
+        # Generate a term for each session in each planned year
+        for year in range(planned_years):
+            for session in sessions:
+                term_key = f"{session}{year}"
+                
+                # Add some courses based on term
+                if year == 0 and session == "Fall":
+                    mock_plan[term_key] = ["ICS 6B", "CS 122A", "INF 43", "STATS 67"]
+                elif year == 0 and session == "Winter":
+                    mock_plan[term_key] = ["ICS 6D", "ICS 139W", "INF 101", "INF 113"]
+                elif year == 0 and session == "Spring":
+                    mock_plan[term_key] = ["CS 122B", "INF 115", "INF 131", "INF 133"]
+                elif year == 1 and session == "Fall":
+                    mock_plan[term_key] = ["CS 161", "CS 171", "INF 141", "INF 121"]
+                elif year == 1 and session == "Winter":
+                    mock_plan[term_key] = ["CS 132", "CS 178", "INF 151", "INF 143"]
+                else:
+                    # Add some of the elective courses for other terms
+                    available_electives = [course for course in elective_courses 
+                                          if course not in completed_courses]
+                    term_courses = available_electives[:3]
+                    # Pad with generic courses if needed
+                    while len(term_courses) < 3:
+                        term_courses.append(f"Elective {len(term_courses) + 1}")
+                    
+                    mock_plan[term_key] = term_courses
+        
+        return jsonify({
+            "plan": mock_plan
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
