@@ -2,6 +2,13 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 import os
 import pandas as pd
+from course_utils import (
+    load_course_prerequisites, 
+    create_prerequisites_dag, 
+    create_forward_dag,
+    short_to_full_course_code,
+    full_to_short_course_code
+)
 import json # Import the json module
 from planner import CoursePlanner # Assuming CoursePlanner is in the same directory or accessible
 from scraper import scape_read_csv # Assuming scraper.py is accessible

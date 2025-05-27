@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Use environment variable with fallback to deployed backend URL
-const API_URL = process.env.REACT_APP_API_URL || 'https://zotgraduator-backend.vercel.app/api';
+// Force API_URL to point to the deployed backend for local testing
+const API_URL = 'https://zotgraduator-backend.vercel.app/api';
 
 // Create axios instance with base URL
 const api = axios.create({
