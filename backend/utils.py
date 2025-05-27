@@ -1,5 +1,4 @@
 import networkx as nx
-import streamlit as st
 from typing import Type
 from collections import deque
 from functools import lru_cache
@@ -55,8 +54,6 @@ def plot_dag(pdag: dict):
         ],
         node_size=750
     )
-    st.set_option('deprecation.showPyplotGlobalUse', False)
-    st.pyplot()
 
 
 def update_plot_dag(plan: Type[CoursePlanner]) -> None:
@@ -69,7 +66,7 @@ def update_plot_dag(plan: Type[CoursePlanner]) -> None:
                     pdag[k].remove(course)
         plot_dag(pdag)
     except:
-        st.warning('Slow down - Add one course at a time', icon="⚠️")
+        pass
 
 
 def dag_leveler(dag) -> list:
