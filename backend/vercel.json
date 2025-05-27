@@ -15,5 +15,6 @@
   "env": {
     "FLASK_ENV": "production",
     "FRONTEND_URL": "https://zotgraduator.vercel.app"
-  }
+  },
+  "buildCommand": "cp courses_availability.csv api/"
 }
