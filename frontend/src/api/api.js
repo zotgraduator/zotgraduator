@@ -110,7 +110,8 @@ const services = {
   planner: {
     generatePlan: (planData) => api.post('/planner/generate', planData),
     getCourseAvailability: () => api.get('/planner/course-availability'),
-    getCompletedSuggestions: () => api.get('/planner/completed-suggestions')
+    getCompletedSuggestions: () => api.get('/planner/completed-suggestions'),
+    getCoursePrereqs: () => api.get('/planner/course-prerequisites') // Added this line
   }
 };
 

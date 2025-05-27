@@ -11,8 +11,18 @@ from course_utils import (
     short_to_full_course_code,
     full_to_short_course_code
 )
+from scraper import scape_read_csv
+from models.course import Course
+from extensions import db
 
 planner_bp = Blueprint('planner', __name__)
+
+# Get the directory of the current file (planner_routes.py)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# Go up one level to the 'backend' directory
+backend_dir = os.path.dirname(current_dir)
+# Construct the path to the CSV file
+CSV_FILE_PATH = os.path.join(backend_dir, 'courses_availability.csv')
 
 def parse_availability_csv(csv_path):
     """Parse the courses_availability.csv file into a dictionary"""
@@ -42,11 +52,6 @@ def generate_plan():
     sessions = data.get('sessions', ['Fall', 'Winter', 'Spring'])
     fixed_courses = data.get('fixedCourses', {})
     
-    # Get the path to the CSV file
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    base_dir = os.path.dirname(current_dir)
-    csv_path = os.path.join(base_dir, 'courses_availability.csv')
-    
     # Load course prerequisites
     prereqs_dict = load_course_prerequisites()
     prereqs_dag = create_prerequisites_dag(prereqs_dict)
@@ -54,7 +59,7 @@ def generate_plan():
     
     # Initialize the course planner with prerequisite information
     planner = CoursePlanner(
-        data_path=csv_path,
+        data_path=CSV_FILE_PATH,
         planned_years=planned_years,
         max_units_per_sem=max_units_per_sem,
         completed_courses=completed_courses,
@@ -64,7 +69,7 @@ def generate_plan():
     )
     
     # Load course availability directly
-    availability_dict = parse_availability_csv(csv_path)
+    availability_dict = parse_availability_csv(CSV_FILE_PATH)
     
     # Filter courses based on availability and electives
     courses_avail = {}
@@ -120,31 +125,48 @@ def generate_plan():
 @planner_bp.route('/course-availability', methods=['GET'])
 def get_course_availability():
     """Get a list of all available courses and when they're offered"""
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    base_dir = os.path.dirname(current_dir)
-    csv_path = os.path.join(base_dir, 'courses_availability.csv')
-    
-    # Parse the CSV directly
-    availability = parse_availability_csv(csv_path)
-    
-    return jsonify({"courses": availability}), 200
-
-@planner_bp.route('/course-prereqs', methods=['GET'])
-def get_course_prereqs():
-    """Get a list of course prerequisites"""
-    prereqs_dict = load_course_prerequisites()
-    prereqs_dag = create_prerequisites_dag(prereqs_dict)
-    
-    return jsonify({"prerequisites": prereqs_dag}), 200
+    try:
+        # Ensure the CSV_FILE_PATH is correct and the file exists
+        if not os.path.exists(CSV_FILE_PATH):
+            return jsonify({"error": "Course availability data not found on server."}), 500
+            
+        availability_data = scape_read_csv(CSV_FILE_PATH)
+        return jsonify({"courses": availability_data}), 200
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Error reading course availability: {e}")
+        return jsonify({"error": "Failed to load course availability"}), 500
 
 @planner_bp.route('/completed-suggestions', methods=['GET'])
 def get_completed_suggestions():
     """Get suggested courses for the completed courses dropdown"""
-    # Common lower-division courses students might have completed
-    suggestions = [
-        'ICS 45C', 'ICS 45J', 'ICS 46', 'ICS 6B', 'ICS 6D', 'ICS 6N', 
-        'ICS 33', 'ICS 32', 'ICS 31', 'STA 67', 'MATH 2A', 'MATH 2B',
-        'WRITING 39A', 'WRITING 39B', 'WRITING 39C'
-    ]
-    
-    return jsonify({"suggestions": suggestions}), 200
+    try:
+        # Ensure the CSV_FILE_PATH is correct and the file exists
+        if not os.path.exists(CSV_FILE_PATH):
+            return jsonify({"error": "Course data for suggestions not found on server."}), 500
+
+        df = pd.read_csv(CSV_FILE_PATH)
+        # Assuming the 'Course' column contains the course IDs
+        if 'Course' not in df.columns:
+            return jsonify({"error": "Invalid course data format for suggestions."}), 500
+            
+        suggestions = df['Course'].tolist()
+        return jsonify({"suggestions": suggestions}), 200
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Error generating completed course suggestions: {e}")
+        return jsonify({"error": "Failed to load completed course suggestions"}), 500
+
+@planner_bp.route('/course-prerequisites', methods=['GET'])
+def get_all_course_prerequisites():
+    """Fetch all courses and their parsed prerequisites."""
+    try:
+        courses = Course.query.all()
+        prerequisites_map = {
+            course.class_name: course.parsed_prerequisites
+            for course in courses if course.class_name and course.parsed_prerequisites
+        }
+        return jsonify({"prerequisites": prerequisites_map}), 200
+    except Exception as e:
+        print(f"Error fetching course prerequisites: {e}") # Log error
+        return jsonify({"error": "Failed to load course prerequisites"}), 500
