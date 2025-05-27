@@ -173,6 +173,11 @@ class CoursePlanner:
         for k in courses_avail.keys():
             if k in self._cdict:  # Only process courses that exist in our dictionary
                 self.__build_plan_dfs(k, courses_avail)
+
+        # Print out self.prereq_dag
+        print("Prerequisite DAG:")
+        for course, prereqs in self._pdag.items():
+            print(f"{course}: {prereqs}")
                 
                 
     def display_schedule(self) -> None:
