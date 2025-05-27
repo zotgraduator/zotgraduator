@@ -1,13 +1,15 @@
 import sys
 import os
+from pathlib import Path
 
-# Add the parent directory to sys.path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add the parent directory to the path so we can import the app
+backend_dir = Path(__file__).resolve().parent.parent
+sys.path.append(str(backend_dir))
 
 from app import create_app
 
-# Create the Flask app - simplified for serverless
+# Create Flask app
 app = create_app()
 
-# This is for Vercel serverless deployment
+# Vercel uses WSGI handler to serve the app
 handler = app
