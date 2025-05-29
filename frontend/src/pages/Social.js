@@ -1,12 +1,18 @@
 import React from 'react';
+import joinVoice from '../images/social-page/join-voice.jpg';
+import activityButton from '../images/social-page/activity-button.jpg';
+import searchZotGraduator from '../images/social-page/search-zotgraduator.jpg';
+import launchActivity from '../images/social-page/launch-activity.jpg';
+import inviteFriends from '../images/social-page/invite-friends.jpg';
+import saveExport from '../images/social-page/save-export.jpg';
 
 const assets = {
-  joinVoice: '/images/social-page/join-voice.jpg',
-  activityButton: '/images/social-page/activity-button.jpg',
-  searchZotGraduator: '/images/social-page/search-zotgraduator.jpg',
-  launchActivity: '/images/social-page/launch-activity.jpg',
-  inviteFriends: '/images/social-page/invite-friends.jpg',
-  saveExport: '/images/social-page/save-export.jpg',
+  joinVoice,
+  activityButton,
+  searchZotGraduator,
+  launchActivity,
+  inviteFriends,
+  saveExport,
 };
 
 function Step({ number, title, description, img, children }) {
