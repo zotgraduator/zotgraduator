@@ -6,7 +6,6 @@ const assets = {
   searchZotGraduator: '/images/social-page/search-zotgraduator.jpg',
   launchActivity: '/images/social-page/launch-activity.jpg',
   inviteFriends: '/images/social-page/invite-friends.jpg',
-  collaborate: '/images/social-page/collaborate.png', // placeholder, not present yet
   saveExport: '/images/social-page/save-export.jpg',
 };
 
@@ -26,16 +25,13 @@ function Step({ number, title, description, img, children }) {
       <div
         style={{
           flex: 1,
-          position: 'relative',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
+          alignItems: 'flex-start',
         }}
       >
-        <h3 style={{ margin: 0, alignSelf: 'flex-start' }}>{title}</h3>
-        <p style={{ margin: '0.5rem 0 1rem 0', alignSelf: 'flex-start' }}>
-          {description}
-        </p>
+        <h3 style={{ margin: 0 }}>{title}</h3>
+        <p style={{ margin: '0.5rem 0 1rem 0' }}>{description}</p>
         {img && (
           <img
             src={img}
@@ -167,27 +163,13 @@ function Social() {
             </ul>
           </>
         }
-        img={undefined}
       />
       <Step
         number={5}
         title="Save or Export Your Plan"
         description="Once you're happy with your schedule, save it to your account or export it for later."
-      >
-        <img
-          src={assets.saveExport}
-          alt="Save or Export"
-          style={{
-            maxWidth: 600,
-            width: '100%',
-            borderRadius: 8,
-            boxShadow: '0 2px 8px #0001',
-            marginTop: 12,
-            marginBottom: 0,
-            display: 'block',
-          }}
-        />
-      </Step>
+        img={assets.saveExport}
+      />
       <div style={{ marginTop: '2.5rem', textAlign: 'center', color: '#666' }}>
         <b>Need help?</b> Visit our Support page or ask in your Discord server’s
         #help channel.
