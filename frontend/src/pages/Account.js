@@ -153,11 +153,6 @@ function Account() {
       <p className="form-footer">
         Don't have an account? <button className="text-button" onClick={() => setActiveTab('signup')}>Sign Up</button>
       </p>
-      <div className="demo-credentials">
-        <p>Demo Credentials:</p>
-        <p>Username: test</p>
-        <p>Password: test</p>
-      </div>
       <button
         type="button"
         className="secondary-button"
