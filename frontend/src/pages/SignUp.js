@@ -41,19 +41,8 @@ function SignUpPage() {
       return;
     }
 
-    // Prepare data for API - match backend expected format
-    const userData = {
-      username: signupData.username,
-      email: signupData.email,
-      password: signupData.password,
-      firstName: signupData.firstName,
-      lastName: signupData.lastName,
-      major: signupData.major,
-      year: signupData.year
-    };
-
     try {
-      await signup(userData);
+      await signup(signupData);
       setSuccessMessage('Account created successfully!');
       // Redirect after successful signup
       setTimeout(() => {
