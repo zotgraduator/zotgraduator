@@ -7,6 +7,7 @@ import './styles/Legal.css';
 import Optimizer from './pages/Optimizer';
 import Visualizer from './pages/Visualizer';
 import Social from './pages/Social';
+import Planner from './pages/Planner'; // Import the new Planner component
 import Account from './pages/Account';
 import TermsAndConditions from './pages/TermsAndConditions';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -24,6 +25,7 @@ function App() {
         </Link>
         <nav>
           <Link to="/optimizer">Optimizer</Link>
+          <Link to="/planner">Planner</Link> {/* Add new Planner link */}
           <Link to="/visualizer">Visualizer</Link>
           <Link to="/social">Social</Link>
           <Link to="/account">Account</Link>
@@ -35,6 +37,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/optimizer" element={<Optimizer />} />
+          <Route path="/planner" element={<Planner />} /> {/* Add new Planner route */}
           <Route path="/visualizer" element={<Visualizer />} />
           <Route path="/social" element={<Social />} />
           <Route path="/account" element={<Account />} />
