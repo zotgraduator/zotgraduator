@@ -52,6 +52,12 @@ function Optimizer() {
   // Add state for course prerequisites
   const [coursePrereqs, setCoursePrereqs] = useState({});
 
+  // State for course search and availability
+  const [courseSearch, setCourseSearch] = useState('');
+  const [courseAvailability, setCourseAvailability] = useState(null);
+  const [availabilityData, setAvailabilityData] = useState({});
+  const [isSearching, setIsSearching] = useState(false);
+  
   // Fetch course availability, prerequisites, and suggestions on component mount
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -60,6 +66,7 @@ function Optimizer() {
         const availabilityResponse = await api.planner.getCourseAvailability();
         const coursesList = Object.keys(availabilityResponse.data.courses);
         setElectiveOptions(coursesList);
+        setAvailabilityData(availabilityResponse.data.courses); // Store full availability data
         
         // Get course prerequisites
         const prereqsResponse = await api.planner.getCoursePrereqs();
@@ -183,6 +190,49 @@ function Optimizer() {
 
   // Calculate end year based on start year and planned years
   const endYear = startYear + plannedYears;
+
+  // Handle course search
+  const handleCourseSearch = async () => {
+    if (!courseSearch.trim()) return;
+    
+    setIsSearching(true);
+    const formattedSearch = courseSearch.trim().toUpperCase();
+    
+    try {
+      // Find matching course in already fetched availability data
+      const matchingCourse = Object.keys(availabilityData).find(
+        course => course.toUpperCase() === formattedSearch
+      );
+      
+      if (matchingCourse) {
+        setCourseAvailability({
+          course: matchingCourse,
+          terms: availabilityData[matchingCourse]
+        });
+      } else {
+        setCourseAvailability(null);
+      }
+    } catch (err) {
+      console.error('Error searching for course:', err);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    setCourseSearch(e.target.value);
+    // Clear previous results when input changes
+    if (e.target.value === '') {
+      setCourseAvailability(null);
+    }
+  };
+
+  // Handle search form submission
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    handleCourseSearch();
+  };
 
   return (
     <div className="optimizer-page">
@@ -419,10 +469,22 @@ function Optimizer() {
 
           <div className="action-filter-bar">
             <div className="search-filters">
-              <div className="search-container">
+              <form onSubmit={handleSearchSubmit} className="search-container">
                 <label>Search</label>
-                <input type="text" placeholder="Course code or name..." />
-              </div>
+                <input 
+                  type="text" 
+                  placeholder="Course code (e.g., CS 161)" 
+                  value={courseSearch}
+                  onChange={handleSearchChange}
+                />
+                <button 
+                  type="submit" 
+                  className="search-button" 
+                  disabled={isSearching || !courseSearch.trim()}
+                >
+                  {isSearching ? '...' : '🔍'}
+                </button>
+              </form>
               <div className="attribute-dropdown">
                 <label>Term</label>
                 <select>
@@ -443,6 +505,31 @@ function Optimizer() {
               </button>
             </div>
           </div>
+
+          {/* Course Availability Display */}
+          {courseAvailability && (
+            <div className="course-availability-container">
+              <div className="availability-header">
+                <h3>{courseAvailability.course} Availability</h3>
+              </div>
+              <div className="availability-content">
+                {courseAvailability.terms && courseAvailability.terms.length > 0 ? (
+                  <>
+                    <p>This course is typically offered in:</p>
+                    <div className="term-tags">
+                      {courseAvailability.terms.map((term, index) => (
+                        <span key={index} className={`term-tag ${term.toLowerCase()}`}>
+                          {term}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p>No availability information found for this course.</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {isLoading ? (
             <div className="loading-container">

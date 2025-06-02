@@ -866,6 +866,107 @@
   border-radius: 4px;
 }
 
+/* Add search button style */
+.search-button {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  height: 32px;
+  width: 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
+}
+
+.search-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+/* Course Availability Styles */
+.course-availability-container {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  margin-bottom: 20px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.availability-header {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 12px 15px;
+}
+
+.availability-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.availability-content {
+  padding: 15px;
+}
+
+.availability-content p {
+  margin: 0 0 10px;
+  color: var(--text-dark);
+}
+
+.term-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.term-tag {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.term-tag.fall {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.term-tag.winter {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.term-tag.spring {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.term-tag.summer {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+/* Update search form to be more flexible */
+.search-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-container input {
+  padding: 8px 10px;
+  border: 1px solid var(--gray-medium);
+  border-radius: var(--border-radius);
+  font-size: 0.95rem;
+  width: 240px;
+  height: 32px;
+}
+
 /* Responsive Styles - adjust for mobile */
 @media (max-width: 992px) {
   .optimizer-content {
