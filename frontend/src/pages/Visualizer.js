@@ -1059,7 +1059,7 @@ function Visualizer() {
           />
           
           <button type="submit" className="search-button">
-            Search
+            🔎
           </button>
           
           {hasSearched && !courseNotFound && (
