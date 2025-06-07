@@ -292,10 +292,19 @@
 }
 
 .empty-state {
-  font-style: italic;
-  color: var(--gray-dark);
   text-align: center;
-  padding: 1.5rem;
+  color: var(--gray-dark);
+  font-style: italic;
+  padding: 2rem;
+  border: 2px dashed var(--gray-medium);
+  border-radius: var(--border-radius);
+}
+
+.loading-state {
+  text-align: center;
+  color: var(--gray-dark);
+  font-style: italic;
+  padding: 2rem;
 }
 
 /* Preferences Section */

@@ -1,38 +1,72 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { plansService } from '../services/plansService';
 import '../styles/Planner.css';
 import api from '../api/api';
 
 function Planner() {
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Check if we're editing an existing plan
+  const editingPlan = location.state?.plan || null;
+  const isEditing = !!editingPlan;
+  
   const [availableCourses, setAvailableCourses] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [currentYear, setCurrentYear] = useState(
+    editingPlan ? editingPlan.start_year : new Date().getFullYear()
+  );
   const [years, setYears] = useState([]);
   const [plan, setPlan] = useState({});
   const [draggedCourse, setDraggedCourse] = useState(null);
   const [showWarning, setShowWarning] = useState(null);
+  
+  // Save plan state
+  const [planName, setPlanName] = useState(editingPlan?.name || '');
+  const [planDescription, setPlanDescription] = useState(editingPlan?.description || '');
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   
   // Terms for the academic year
   const terms = ['Fall', 'Winter', 'Spring'];
   
   // Initialize years and plan structure
   useEffect(() => {
-    const initialYears = [0, 1, 2, 3]; // 4 years by default
+    let initialYears;
+    
+    if (isEditing && editingPlan.planned_years) {
+      initialYears = Array.from({ length: editingPlan.planned_years }, (_, i) => i);
+    } else {
+      initialYears = [0, 1, 2, 3]; // 4 years by default
+    }
+    
     setYears(initialYears);
     
     // Initialize plan structure
     const initialPlan = {};
-    initialYears.forEach(yearOffset => {
-      const academicYear = currentYear + yearOffset;
-      terms.forEach(term => {
-        initialPlan[`${term}${academicYear}`] = [];
+    
+    if (isEditing && editingPlan.plan_data) {
+      // Load existing plan data
+      Object.assign(initialPlan, editingPlan.plan_data);
+    } else {
+      // Create empty plan structure
+      initialYears.forEach(yearOffset => {
+        const academicYear = currentYear + yearOffset;
+        terms.forEach(term => {
+          initialPlan[`${term}${academicYear}`] = [];
+        });
       });
-    });
+    }
     
     setPlan(initialPlan);
-  }, [currentYear]);
+  }, [currentYear, isEditing, editingPlan]);
   
   // Fetch course availability data
   useEffect(() => {
@@ -65,6 +99,67 @@ function Planner() {
     );
     setFilteredCourses(filtered);
   }, [searchTerm, availableCourses]);
+  
+  // Save plan function
+  const handleSavePlan = async () => {
+    if (!currentUser) {
+      setError('You must be logged in to save plans');
+      return;
+    }
+    
+    if (!planName.trim()) {
+      setError('Please enter a plan name');
+      return;
+    }
+    
+    setSaving(true);
+    setError(null);
+    
+    try {
+      const planData = {
+        name: planName.trim(),
+        description: planDescription.trim(),
+        plan: plan,
+        currentYear,
+        years
+      };
+      
+      if (isEditing) {
+        await plansService.updatePlan(editingPlan.id, planData);
+      } else {
+        await plansService.savePlan(planData);
+      }
+      
+      setSaveSuccess(true);
+      setShowSaveDialog(false);
+      
+      // Show success message
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 3000);
+      
+    } catch (err) {
+      console.error('Error saving plan:', err);
+      setError(err.message || 'Failed to save plan');
+    } finally {
+      setSaving(false);
+    }
+  };
+  
+  // Show save dialog
+  const handleShowSaveDialog = () => {
+    if (!currentUser) {
+      setError('You must be logged in to save plans');
+      return;
+    }
+    setShowSaveDialog(true);
+  };
+  
+  // Close save dialog
+  const handleCloseSaveDialog = () => {
+    setShowSaveDialog(false);
+    setError(null);
+  };
   
   // Handle search input change
   const handleSearchChange = (e) => {
@@ -278,12 +373,78 @@ function Planner() {
   
   return (
     <div className="planner-page">
+      {/* Loading Overlay with Bokeh Effect */}
+      {loading && (
+        <div className="loading-overlay">
+          <div className="bokeh-container">
+            <div className="bokeh-circle bokeh-1"></div>
+            <div className="bokeh-circle bokeh-2"></div>
+            <div className="bokeh-circle bokeh-3"></div>
+            <div className="bokeh-circle bokeh-4"></div>
+            <div className="bokeh-circle bokeh-5"></div>
+            <div className="bokeh-circle bokeh-6"></div>
+            <div className="bokeh-circle bokeh-7"></div>
+            <div className="bokeh-circle bokeh-8"></div>
+          </div>
+          <div className="loading-text">Loading courses...</div>
+        </div>
+      )}
+      
       <div className="planner-header">
-        <h2>Course Planner</h2>
+        <h2>{isEditing ? `Editing: ${editingPlan.name}` : 'Course Planner'}</h2>
         <p className="subtitle">Drag courses to build your personalized academic plan</p>
       </div>
       
       {error && <div className="error-message">{error}</div>}
+      
+      {/* Save Dialog Modal */}
+      {showSaveDialog && (
+        <div className="modal-overlay" onClick={handleCloseSaveDialog}>
+          <div className="save-dialog" onClick={(e) => e.stopPropagation()}>
+            <h3>{isEditing ? 'Update Plan' : 'Save Academic Plan'}</h3>
+            
+            <div className="form-group">
+              <label htmlFor="plan-name">Plan Name:</label>
+              <input
+                id="plan-name"
+                type="text"
+                value={planName}
+                onChange={(e) => setPlanName(e.target.value)}
+                placeholder="Enter plan name..."
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="plan-description">Description (optional):</label>
+              <textarea
+                id="plan-description"
+                value={planDescription}
+                onChange={(e) => setPlanDescription(e.target.value)}
+                placeholder="Enter plan description..."
+                rows="3"
+              />
+            </div>
+            
+            <div className="dialog-actions">
+              <button 
+                className="cancel-button" 
+                onClick={handleCloseSaveDialog}
+                disabled={saving}
+              >
+                Cancel
+              </button>
+              <button 
+                className="save-button" 
+                onClick={handleSavePlan}
+                disabled={saving || !planName.trim()}
+              >
+                {saving ? 'Saving...' : (isEditing ? 'Update' : 'Save')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="planner-controls">
         <div className="year-controls">
@@ -313,6 +474,20 @@ function Planner() {
         </div>
         
         <div className="plan-stats">
+          <button 
+            className="save-plan-button" 
+            onClick={handleShowSaveDialog}
+            disabled={saving}
+          >
+            {saving ? 'Saving...' : (isEditing ? 'Update Plan' : 'Save Plan')}
+          </button>
+          
+          {saveSuccess && (
+            <div className="save-success-message">
+              Plan saved successfully! ✅
+            </div>
+          )}
+          
           <div className="stat-item">
             <span className="stat-label">Total Courses:</span>
             <span className="stat-value">{totalCourses}</span>

@@ -16,31 +16,41 @@ export function AuthProvider({ children }) {
     // Check if user is already logged in
     checkUser();
 
-    // Set up auth listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+    // Set up auth listener - avoid async operations in callback to prevent deadlock
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
         console.log(`Supabase auth event: ${event}`);
-        if (session?.user) {
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', session.user.email)
-            .single();
+        
+        // Use setTimeout to defer async operations and avoid deadlock
+        setTimeout(async () => {
+          if (session?.user) {
+            try {
+              const { data: userData, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('email', session.user.email)
+                .single();
 
-          if (error) {
-            console.error('Error fetching user data:', error);
+              if (error) {
+                console.error('Error fetching user data:', error);
+                setCurrentUser(null);
+              } else {
+                setCurrentUser(userData);
+              }
+            } catch (err) {
+              console.error('Error in auth state change:', err);
+              setCurrentUser(null);
+            }
           } else {
-            setCurrentUser(userData);
+            setCurrentUser(null);
           }
-        } else {
-          setCurrentUser(null);
-        }
-        setLoading(false);
+          setLoading(false);
+        }, 0);
       }
     );
 
     return () => {
-      if (authListener) authListener.subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 
@@ -78,17 +88,9 @@ export function AuthProvider({ children }) {
 
       if (error) throw error;
 
-      // Get user profile data from our custom users table
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
-
-      if (userError) throw userError;
-      
-      setCurrentUser(userData);
-      return userData;
+      // User data will be set by the auth state change listener
+      // Don't manually set it here to avoid conflicts
+      return data;
     } catch (err) {
       console.error('Login error:', err);
       setError(err.message || 'Failed to login');
@@ -99,6 +101,18 @@ export function AuthProvider({ children }) {
   const signup = async (userData) => {
     try {
       setError('');
+      
+      // Check if username already exists before proceeding
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('username')
+        .eq('username', userData.username)
+        .single();
+
+      if (existingUser) {
+        throw new Error('Username already exists. Please choose a different username.');
+      }
+
       // First register with Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email: userData.email,
@@ -120,23 +134,26 @@ export function AuthProvider({ children }) {
         }
       ]);
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        // Handle specific database constraint errors
+        if (insertError.code === '23505') { // PostgreSQL unique constraint violation
+          if (insertError.message.includes('users_username_key')) {
+            throw new Error('Username already exists. Please choose a different username.');
+          } else if (insertError.message.includes('users_email_key')) {
+            throw new Error('Email already exists. Please use a different email address.');
+          }
+        }
+        throw insertError;
+      }
 
-      // Get the newly created user data
-      const { data: newUserData, error: fetchError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', userData.email)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      setCurrentUser(newUserData);
-      return newUserData;
+      // User data will be set by the auth state change listener
+      // Don't manually set it here to avoid conflicts
+      return data;
     } catch (err) {
       console.error('Signup error:', err);
-      setError(err.message || 'Failed to create account');
-      throw new Error(err.message || 'Failed to create account');
+      const errorMessage = err.message || 'Failed to create account';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     }
   };
 
@@ -144,7 +161,7 @@ export function AuthProvider({ children }) {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      setCurrentUser(null);
+      // User will be cleared by the auth state change listener
     } catch (err) {
       console.error('Logout error:', err);
     }

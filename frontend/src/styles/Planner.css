@@ -47,8 +47,9 @@
 
 .year-controls {
   display: flex;
-  align-items: center;
-  gap: 15px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
 }
 
 .year-controls label {
@@ -105,6 +106,39 @@
 .plan-stats {
   display: flex;
   gap: 20px;
+  align-items: center;
+}
+
+.plan-stats .save-plan-button {
+  background-color: #2c5aa0;
+  color: white;
+  border: none;
+  padding: 20px 30px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-weight: 500;
+  font-family: inherit;
+  font-size: inherit;
+  transition: background-color 0.2s;
+  margin-right: 10px;
+}
+
+.plan-stats .save-plan-button:hover:not(:disabled) {
+  background-color: #1e3d6f;
+}
+
+.plan-stats .save-plan-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.plan-stats .save-success-message {
+  color: #28a745;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: 10px;
 }
 
 .stat-item {
@@ -442,5 +476,242 @@
   .year-controls {
     flex-wrap: wrap;
     justify-content: center;
+  }
+}
+
+/* Save Functionality Styles */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.save-dialog {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.save-dialog h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #555;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #2c5aa0;
+  box-shadow: 0 0 0 2px rgba(44, 90, 160, 0.1);
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+.cancel-button {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cancel-button:hover:not(:disabled) {
+  background: #545b62;
+}
+
+.save-button {
+  background: #2c5aa0;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.save-button:hover:not(:disabled) {
+  background: #1e3d6f;
+}
+
+.save-button:disabled,
+.cancel-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loading-state {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  padding: 2rem;
+}
+
+/* Loading Overlay with Bokeh Effect */
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.bokeh-container {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin-bottom: 2rem;
+}
+
+.bokeh-circle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.7;
+  animation: bokeh-float 3s ease-in-out infinite;
+  filter: blur(2px);
+}
+
+.bokeh-1 {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(45deg, #2c5aa0, #4a7bc8);
+  top: 20px;
+  left: 30px;
+  animation-delay: 0s;
+}
+
+.bokeh-2 {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(45deg, #1e3d6f, #2c5aa0);
+  top: 80px;
+  right: 20px;
+  animation-delay: 0.5s;
+}
+
+.bokeh-3 {
+  width: 30px;
+  height: 30px;
+  background: linear-gradient(45deg, #4a7bc8, #6fa8dc);
+  bottom: 60px;
+  left: 40px;
+  animation-delay: 1s;
+}
+
+.bokeh-4 {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(45deg, #6fa8dc, #93c5ed);
+  top: 10px;
+  right: 60px;
+  animation-delay: 1.5s;
+}
+
+.bokeh-5 {
+  width: 35px;
+  height: 35px;
+  background: linear-gradient(45deg, #93c5ed, #b6d7f2);
+  bottom: 20px;
+  right: 40px;
+  animation-delay: 2s;
+}
+
+.bokeh-6 {
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(45deg, #2c5aa0, #6fa8dc);
+  top: 50px;
+  left: 10px;
+  animation-delay: 2.5s;
+}
+
+.bokeh-7 {
+  width: 25px;
+  height: 25px;
+  background: linear-gradient(45deg, #1e3d6f, #4a7bc8);
+  bottom: 100px;
+  right: 80px;
+  animation-delay: 0.8s;
+}
+
+.bokeh-8 {
+  width: 55px;
+  height: 55px;
+  background: linear-gradient(45deg, #4a7bc8, #2c5aa0);
+  top: 120px;
+  left: 80px;
+  animation-delay: 1.8s;
+}
+
+@keyframes bokeh-float {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-20px) scale(1.1);
+    opacity: 0.9;
+  }
+}
+
+.loading-text {
+  font-size: 1.5rem;
+  color: #2c5aa0;
+  font-weight: 500;
+  text-align: center;
+  animation: pulse-text 2s ease-in-out infinite;
+}
+
+@keyframes pulse-text {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
   }
 }

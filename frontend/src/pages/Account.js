@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { plansService } from '../services/plansService';
 import '../styles/Account.css';
 
 function Account() {
@@ -35,11 +36,9 @@ function Account() {
     { id: 2, name: 'Winter 2024', courses: ['COMPSCI 122A', 'COMPSCI 143A', 'STATS 67'] }
   ]);
 
-  // Mock academic plans
-  const [savedPlans, setSavedPlans] = useState([
-    { id: 1, name: 'Four Year Plan', description: 'Complete degree in four years' },
-    { id: 2, name: 'CS Specialization', description: 'Focus on AI and Machine Learning' }
-  ]);
+  // Real saved plans from database
+  const [savedPlans, setSavedPlans] = useState([]);
+  const [loadingPlans, setLoadingPlans] = useState(false);
 
   // User preferences
   const [preferences, setPreferences] = useState({
@@ -48,6 +47,45 @@ function Account() {
     showGPA: true,
     scheduleReminders: true
   });
+
+  // Fetch user plans when user is logged in
+  useEffect(() => {
+    if (currentUser) {
+      fetchUserPlans();
+    }
+  }, [currentUser]);
+
+  const fetchUserPlans = async () => {
+    try {
+      setLoadingPlans(true);
+      const plans = await plansService.getUserPlans();
+      setSavedPlans(plans);
+    } catch (error) {
+      console.error('Error fetching plans:', error);
+    } finally {
+      setLoadingPlans(false);
+    }
+  };
+
+  // Handle editing plans
+  const handleEditPlan = (plan) => {
+    navigate('/planner', { state: { plan } });
+  };
+
+  // Handle deleting plans
+  const handleDeletePlan = async (planId) => {
+    if (!window.confirm('Are you sure you want to delete this plan?')) {
+      return;
+    }
+    
+    try {
+      await plansService.deletePlan(planId);
+      setSavedPlans(prev => prev.filter(plan => plan.id !== planId));
+    } catch (error) {
+      console.error('Error deleting plan:', error);
+      setSignupError('Failed to delete plan. Please try again.');
+    }
+  };
 
   // Handle login form submission
   const handleLogin = async (e) => {
@@ -81,8 +119,23 @@ function Account() {
 
     try {
       await signup(signupData);
-      setSuccessMessage('Account created successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      
+      // Clear signup form
+      setSignupData({
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        firstName: '',
+        lastName: '',
+        major: '',
+        year: ''
+      });
+      
+      // Switch to login tab and show email confirmation message
+      setActiveTab('login');
+      setSuccessMessage('Account created successfully! Please check your email to confirm your account, then sign in.');
+      setTimeout(() => setSuccessMessage(''), 8000); // longer timeout for email confirmation message
     } catch (error) {
       setSignupError(error.message);
     }
@@ -291,7 +344,7 @@ function Account() {
       <div className="profile-info">
         <div className="info-group">
           <label>Name</label>
-          <p>{currentUser.firstName} {currentUser.lastName}</p>
+          <p>{currentUser.first_name} {currentUser.last_name}</p>
         </div>
         <div className="info-group">
           <label>Username</label>
@@ -350,18 +403,38 @@ function Account() {
     <div className="plans-section">
       <h2>Saved Academic Plans</h2>
       <div className="saved-items-list">
-        {savedPlans.length > 0 ? (
+        {loadingPlans ? (
+          <p className="loading-state">Loading plans...</p>
+        ) : savedPlans.length > 0 ? (
           savedPlans.map(plan => (
             <div key={plan.id} className="saved-item">
               <div className="saved-item-header">
                 <h3>{plan.name}</h3>
                 <div className="saved-item-actions">
-                  <button className="icon-button">✏️</button>
-                  <button className="icon-button">🗑️</button>
+                  <button 
+                    className="icon-button" 
+                    onClick={() => handleEditPlan(plan)}
+                    title="Edit plan"
+                  >
+                    ✏️
+                  </button>
+                  <button 
+                    className="icon-button" 
+                    onClick={() => handleDeletePlan(plan.id)}
+                    title="Delete plan"
+                  >
+                    🗑️
+                  </button>
                 </div>
               </div>
               <div className="saved-item-details">
-                <p>{plan.description}</p>
+                <p>{plan.description || 'No description'}</p>
+                <p><strong>Start Year:</strong> {plan.start_year}</p>
+                <p><strong>Duration:</strong> {plan.planned_years} years</p>
+                <p><strong>Created:</strong> {new Date(plan.created_at).toLocaleDateString()}</p>
+                {plan.updated_at && plan.updated_at !== plan.created_at && (
+                  <p><strong>Last Updated:</strong> {new Date(plan.updated_at).toLocaleDateString()}</p>
+                )}
               </div>
             </div>
           ))
@@ -369,7 +442,12 @@ function Account() {
           <p className="empty-state">No saved academic plans yet.</p>
         )}
       </div>
-      <button className="primary-button">Create New Plan</button>
+      <button 
+        className="primary-button"
+        onClick={() => navigate('/planner')}
+      >
+        Create New Plan
+      </button>
     </div>
   );
 
