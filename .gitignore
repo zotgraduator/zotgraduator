@@ -7,6 +7,7 @@
 logs
 **/*.backup.*
 **/*.back.*
+/backend/tmp/*
 
 node_modules
 bower_components
